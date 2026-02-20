@@ -7,6 +7,8 @@ import {
 import "./index.css";
 import Root, {loader as rootLoader} from "./Root";
 import Team from "./team/Team";
+import { Table } from "./table/Table";
+import Home from "./home/Home";
 
 const router = createBrowserRouter([
   {
@@ -14,6 +16,14 @@ const router = createBrowserRouter([
     element: <Root></Root>,
     loader: rootLoader,
     children: [
+      {
+        path: "/",
+        element: <Home/>,
+      },
+      {
+        path: "/tables",
+        element: <Table/>,
+      },
       {
         path: "team/:teamNumber",
         element: <Team />,
