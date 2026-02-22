@@ -1,9 +1,10 @@
 import { Outlet, useLoaderData } from "react-router-dom";
 import { supabase } from '../supabase'
-import type { LIVE_DATA_COMBINED } from '../types';
+import type { LIVE_DATA_COMBINED, TeamValues } from '../types';
 import NavBar from "./components/NavBar";
 import { useEffect } from "react";
 import { useRawDataStore } from "./data-store";
+import type { Database } from "../database.types";
 
 export default function Root() {
     const rawData: LIVE_DATA_COMBINED = useLoaderData();
@@ -16,9 +17,9 @@ export default function Root() {
     }, [rawData])
 
     return (
-        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-full h-full min-h-screen max-w-screen pt-13">
+        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-full h-full min-h-screen w-full pt-14 pb-14">
             <NavBar />
-            <div className="mx-7 bg-white flex-1 rounded-xl">
+            <div className="mx-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
                 <Outlet />
             </div>
         </div>
@@ -34,6 +35,17 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
     return {
         'all_match_data': all_match_data ?? [],
         'all_pit_data': all_pit_data ?? [],
-        'all_pick_list_data': all_pick_list_data ?? []
+        'all_pick_list_data': all_pick_list_data ?? [],
+        'team_rows': compileTeamData(all_match_data ?? []),
     } as LIVE_DATA_COMBINED;
+}
+
+function compileTeamData(matchData: Database['public']['Tables']['Live Data']['Row'][]): TeamValues[] {
+    var teams: number[] = [];
+    matchData.forEach((item) => {
+        if (!teams.includes(item.team_number)) {
+            teams.push(item.team_number);
+        }
+    });
+    return [];
 }
