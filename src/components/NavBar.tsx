@@ -7,7 +7,7 @@ export default function NavBar() {
             <div className="z-20 backdrop-blur-sm list-none w-full pt-2 pb-2 h-14 bg-[#363432] transtion duration-300 flex-row flex flex-row align-center justify-between px-8
         text-white [&_li]:text-[18px] [&_li]:py-2 [&_li]:px-3 [&_li]:hover:bg-[#0d0907]/67 [&_li]:relative [&_li]:rounded-lg [&_li]:transition duration-300 [&_li]:cursor-pointer  ">
                 <div className="flex flex-row items-center gap-3 font-rubik" >
-                    <img className="w-18 h-10 object-contain bg-orange-300/40 rounded-lg" src='src\assets\logo.png'></img>
+                    <img className="w-18 h-10 object-contain bg-orange-300/40 rounded-lg" src='\src\assets\logo.png'></img>
                     <Link to={`/`} className="text-xl text-orange-300 font-medium hover:underline cursor-pointer font-poppins">Scouting 2026</Link>
                 </div>
                 <div className="flex flex-row gap-5 font-rubik font-light">

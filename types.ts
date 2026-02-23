@@ -15,6 +15,11 @@ export interface TeamValues {
         total_points: TeamStatistic
 }
 
+export interface TeamRow {
+        team: number,
+        data: TeamValues,
+}
+
 export interface TeamStatistic {
         min: number;
         max: number;
