@@ -12,7 +12,8 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     rawDataCombined: {
         all_match_data: [],
         all_pit_data: [],
-        all_pick_list_data: []
+        all_pick_list_data: [],
+        team_rows: []
     },
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => set((s) => ({ rawDataCombined: state }))
 }));

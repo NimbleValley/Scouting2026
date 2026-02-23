@@ -8,3 +8,7 @@
     --font-alexandria: "Alexandria", sans-serif;
     --font-rubik: "Rubik", sans-serif;
 }
+
+html, body {
+    background-color: #ebe8d8;
+}

@@ -17,9 +17,9 @@ export default function Root() {
     }, [rawData])
 
     return (
-        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-full h-full min-h-screen w-full pt-14 pb-14">
+        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-fit h-full min-h-screen w-full pt-14 pb-14">
             <NavBar />
-            <div className="mx-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
+            <div className="mx-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit pr-7">
                 <Outlet />
             </div>
         </div>
