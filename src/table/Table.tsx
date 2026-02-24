@@ -1,4 +1,4 @@
-import type { LIVE_DATA_COMBINED } from "../../types";
+import type { LIVE_DATA_COMBINED, TeamValues } from "../../types";
 import { useEffect, useState } from "react";
 import { useRawDataStore } from "../data-store";
 import { ArrowUpDown, ArrowDown, ArrowUp, Settings, X } from "lucide-react";
@@ -6,6 +6,11 @@ import type { Database } from "../../database.types";
 
 interface RawDataOrder {
   key: keyof Database['public']['Tables']['Live Data']['Row'];
+  label: string;
+}
+
+interface TeamDataOrder {
+  key: keyof TeamValues;
   label: string;
 }
 
@@ -44,13 +49,28 @@ const RAW_DATA_ORDER: RawDataOrder[] = [
   { key: "strategies", label: "Strategies" },
 ];
 
+const TEAM_DATA_ORDER: TeamDataOrder[] = [
+  { key: 'team_number', label: 'Team Number' },
+  { key: 'auto_fuel', label: 'Auto Fuel' },
+  { key: 'auto_pass', label: 'Auto Pass' },
+  { key: 'auto_points', label: 'Auto Points' },
+  { key: 'down_time', label: 'Down Time' },
+  { key: 'driver_rating', label: 'Driver Rating' },
+  { key: 'endgame_points', label: 'Endgame Points' },
+  { key: 'match_number', label: 'Match Number' },
+  { key: 'tele_fuel', label: 'Tele Fuel' },
+  { key: 'tele_points', label: 'Tele Points' },
+  { key: 'total_gamepieces', label: 'Total Game Pieces' },
+  { key: 'total_points', label: 'Total Points' },
+];
+
 const TEXT_VIEW_KEYS = new Set<string>(["comments", "strategies", "auto_issues"]);
 
 export const Table = () => {
   const rawData = useRawDataStore();
 
   useEffect(() => {
-    console.warn(rawData);
+    console.log(rawData);
   }, [rawData]);
 
   const [sortConfig, setSortConfig] = useState<{ column: string | null; direction: 'asc' | 'desc' | null }>({
@@ -60,7 +80,11 @@ export const Table = () => {
 
   const [configOpen, setConfigOpen] = useState(false);
 
-  const tableType = "Raw";
+  const [tableType, setTableType] = useState<'Raw' | 'Team'>("Raw");
+
+  useEffect(() => {
+
+  }, [tableType]);
 
   const getSortIcon = (columnKey: string) => {
     if (sortConfig.column !== columnKey) {
@@ -78,17 +102,21 @@ export const Table = () => {
   const [teamFilter, setTeamFilter] = useState<string>('');
 
   // Compute visible columns once, not per-cell
-  var visibleColumns = hasData
+  const [visibleColumns, setVisibleColumns] = useState<RawDataOrder[] | TeamDataOrder[]>(hasData
     ? RAW_DATA_ORDER.filter((col) => Object.keys(allMatchData[0]).includes(col.key))
-    : [];
+    : []);
 
-  /*
-useEffect(() => {
-  visibleColumns = hasData
-    ? RAW_DATA_ORDER.filter((col) => Object.keys(allMatchData[0]).includes(col.key)).filter((val) => teamFilter.length < 1 || val.)
-    : [];
-}, [teamFilter]);
-*/
+  useEffect(() => {
+    if (tableType == 'Raw') {
+      setVisibleColumns(hasData
+        ? RAW_DATA_ORDER.filter((col) => Object.keys(allMatchData[0]).includes(col.key))
+        : []);
+    } else if (tableType == 'Team') {
+      setVisibleColumns(hasData
+        ? TEAM_DATA_ORDER
+        : []);
+    }
+  }, [tableType]);
 
   const renderCell = (item: typeof allMatchData[number], col: RawDataOrder) => {
     const value = item[col.key];
@@ -128,8 +156,8 @@ useEffect(() => {
     <div className="relative h-full">
       <div className={`${configOpen ? 'sticky top-14 z-25 shadow-sm' : ''} h-10 bg-[#FFFFFF] sticky top-0 transition flex flex-row w-fit rounded-b-lg items-center pl-10 pr-5`}>
         <label htmlFor="data-table-type">Table type:</label>
-        <select id="data-table-type" className="ml-4 bg-gray-50 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
-          <option>Raw</option>
+        <select onChange={(e) => setTableType(e.target.value as 'Raw' | 'Team')} id="data-table-type" className="ml-4 bg-gray-50 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
+          <option value={'raw'}>Raw</option>
         </select>
         <label htmlFor="data-table-number-filter" className="ml-10">Team filter:</label>
         <input onChange={(e) => setTeamFilter(e.target.value)} type={'number'} id="data-table-number-filter" className="ml-4 bg-gray-50 px-3 w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">

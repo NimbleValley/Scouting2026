@@ -36,18 +36,18 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         'all_match_data': all_match_data ?? [],
         'all_pit_data': all_pit_data ?? [],
         'all_pick_list_data': all_pick_list_data ?? [],
-        'team_rows': compileTeamData(all_match_data ?? []),
+        'team_rows': all_match_data ? compileTeamData(all_match_data) : {},
     } as LIVE_DATA_COMBINED;
 }
 
-function compileTeamData(matchData: Database['public']['Tables']['Live Data']['Row'][]): TeamValues[] {
+function compileTeamData(matchData: Database['public']['Tables']['Live Data']['Row'][]): Record<number, TeamValues> {
     var teams: number[] = [];
     matchData.forEach((item) => {
         if (!teams.includes(item.team_number)) {
             teams.push(item.team_number);
         }
     });
-    let data = [];
+    let data: Record<number, TeamValues> = {};
     teams.forEach((team) => {
         let defaultTeamStatistic: TeamStatistic = {
             min: 0,
@@ -108,8 +108,8 @@ function compileTeamData(matchData: Database['public']['Tables']['Live Data']['R
                 (tempTeamValues as any)[keyTyped] = tempTeamStats;
             }
         });
-        data.push(tempTeamValues);
+        data[team] = (tempTeamValues);
     });
     console.log(data)
-    return [];
+    return data;
 }
