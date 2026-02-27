@@ -54,7 +54,6 @@ const TEAM_DATA_ORDER: TeamDataOrder[] = [
   { key: 'auto_fuel', label: 'Auto Fuel' },
   { key: 'auto_pass', label: 'Auto Pass' },
   { key: 'auto_points', label: 'Auto Points' },
-  { key: 'down_time', label: 'Down Time' },
   { key: 'driver_rating', label: 'Driver Rating' },
   { key: 'endgame_points', label: 'Endgame Points' },
   { key: 'match_number', label: 'Match Number' },
@@ -96,34 +95,18 @@ export const Table = () => {
     return <ArrowUp size={14} className="inline ml-1 text-orange-600" />;
   };
 
-  const allMatchData = rawData.rawDataCombined.all_match_data;
-  const hasData = allMatchData.length >= 1;
+  const rawMatchData = rawData.rawDataCombined.all_match_data;
+  const teamMatchData = rawData.rawDataCombined.team_rows;
+  const hasData = rawMatchData.length >= 1;
 
   const [teamFilter, setTeamFilter] = useState<string>('');
 
-  // Compute visible columns once, not per-cell
-  const [visibleColumns, setVisibleColumns] = useState<RawDataOrder[] | TeamDataOrder[]>(hasData
-    ? RAW_DATA_ORDER.filter((col) => Object.keys(allMatchData[0]).includes(col.key))
-    : []);
-
-  useEffect(() => {
-    if (tableType == 'Raw') {
-      setVisibleColumns(hasData
-        ? RAW_DATA_ORDER.filter((col) => Object.keys(allMatchData[0]).includes(col.key))
-        : []);
-    } else if (tableType == 'Team') {
-      setVisibleColumns(hasData
-        ? TEAM_DATA_ORDER
-        : []);
-    }
-  }, [tableType]);
-
-  const renderCell = (item: typeof allMatchData[number], col: RawDataOrder) => {
+  const renderRawCell = (item: typeof rawMatchData[number], col: RawDataOrder) => {
     const value = item[col.key];
 
     if (TEXT_VIEW_KEYS.has(col.key)) {
       return (
-        <button className="px-3 py-1.5 bg-orange-500 text-white text-sm font-medium rounded-md hover:bg-orange-600 transition shadow-sm">
+        <button className="px-3 py-1 bg-orange-100 text-black hover:ring-2 ring-gray-700 text-sm font-medium rounded-md hover:bg-orange-300 cursor-pointer transition duration-250">
           View
         </button>
       );
@@ -131,7 +114,7 @@ export const Table = () => {
 
     if (typeof value === "boolean") {
       return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${value ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${value ? "bg-green-200" : "bg-red-200"}`}>
           {value ? "Yes" : "No"}
         </span>
       );
@@ -152,12 +135,25 @@ export const Table = () => {
     );
   };
 
+  const renderTeamCell = (item: typeof teamMatchData[number], col: TeamDataOrder) => {
+    console.log(item[col.key]);
+    console.log(col.key)
+    const value = item[col.key];
+
+    return (
+      <span className="text-gray-700">
+        {typeof value == "number" ? String(value) : value.median}
+      </span>
+    );
+  };
+
   return (
     <div className="relative h-full">
-      <div className={`${configOpen ? 'sticky top-14 z-25 shadow-sm' : ''} h-10 bg-[#FFFFFF] sticky top-0 transition flex flex-row w-fit rounded-b-lg items-center pl-10 pr-5`}>
+      <div className={`${configOpen ? 'sticky top-0 z-25 shadow-sm' : ''} h-10 bg-[#FFFFFF] sticky top-0 transition flex flex-row w-fit rounded-b-lg items-center pl-10 pr-5`}>
         <label htmlFor="data-table-type">Table type:</label>
         <select onChange={(e) => setTableType(e.target.value as 'Raw' | 'Team')} id="data-table-type" className="ml-4 bg-gray-50 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
-          <option value={'raw'}>Raw</option>
+          <option value={'Raw'}>Raw</option>
+          <option value={'Team'}>Team</option>
         </select>
         <label htmlFor="data-table-number-filter" className="ml-10">Team filter:</label>
         <input onChange={(e) => setTeamFilter(e.target.value)} type={'number'} id="data-table-number-filter" className="ml-4 bg-gray-50 px-3 w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
@@ -175,30 +171,21 @@ export const Table = () => {
       </button>
 
       {hasData ? (
-        <table className={`border-collapse relative w-full text-sm md:text-base ml-0 ${tableType === "Raw" ? "shadow-sm rounded-b-xl" : "border border-gray-300"}`}>
-          <thead className="sticky top-14 h-10 transition-top duration-250">
-            <tr className={tableType === "Raw" ? "bg-orange-100 h-10" : "bg-gray-200 shadow-lg"}>
-              {visibleColumns.map((item) => (
+        <div className="rounded-b-xl border-x border-b border-gray-200">
+        <table className={`border-collapse relative w-full text-sm md:text-base ml-0 shadow-sm`}>
+          <thead className="sticky top-0 h-10 transition-top duration-250">
+            <tr className={"bg-orange-100 h-10"}>
+              {(tableType == 'Raw' ? RAW_DATA_ORDER : TEAM_DATA_ORDER).map((item) => (
                 <th
                   key={item.key}
                   onClick={() => { }}
-                  className={`${tableType === "Raw"
-                    ? "px-3 py-2 font-semibold text-gray-900 h-10"
-                    : "border-t-1 px-3 py-2"
-                    } text-center whitespace-nowrap cursor-pointer select-none hover:bg-orange-200 transition duration-250 ${sortConfig.column === item.key ? (tableType === "Raw" ? 'bg-orange-300' : 'bg-orange-400') : ''
+                  className={`px-3 py-2 font-semibold text-gray-900 h-10" text-center whitespace-nowrap cursor-pointer select-none hover:bg-orange-200 transition duration-250 ${sortConfig.column === item.key ? ('bg-orange-400') : ''
                     }`}
                 >
                   <div className="flex items-center justify-center gap-1 ">
-                    {item.label}
-                    {tableType === "Raw" ? (
+                    {item.label}{
                       getSortIcon(item.key)
-                    ) : (
-                      sortConfig.column === item.key && (
-                        <span className="text-xs font-bold text-orange-600">
-                          {sortConfig.direction === "desc" ? "▼" : sortConfig.direction === "asc" ? "▲" : ""}
-                        </span>
-                      )
-                    )}
+                    }
                   </div>
                 </th>
               ))}
@@ -206,7 +193,7 @@ export const Table = () => {
           </thead>
 
           <tbody>
-            {allMatchData.filter((val) => teamFilter.length < 1 || val.team_number.toString().includes(teamFilter)).map((item, i) => (
+            {tableType == 'Raw' ? rawMatchData.filter((val) => teamFilter.length < 1 || val.team_number.toString().includes(teamFilter)).map((item, i) => (
               <tr
                 key={item.id}
                 className={
@@ -215,15 +202,32 @@ export const Table = () => {
                     : "bg-gray-50 hover:bg-gray-100 transition-colors"
                 }
               >
-                {visibleColumns.map((col, t) => (
-                  <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
-                    {renderCell(item, col)}
+                {RAW_DATA_ORDER.map((col, t) => (
+                  <td key={t} className={`border-y ${i-1} bg-transparent border-gray-200 px-3 py-2 text-center`}>
+                    {renderRawCell(item, col as RawDataOrder)}
                   </td>
                 ))}
               </tr>
-            ))}
+            )) :
+              Object.keys(teamMatchData).map((item, i) => (
+                <tr
+                  key={i}
+                  className={
+                    i % 3 !== 0
+                      ? "bg-white hover:bg-gray-50 transition-colors"
+                      : "bg-gray-50 hover:bg-gray-100 transition-colors"
+                  }
+                >
+                  {TEAM_DATA_ORDER.map((col, t) => (
+                    <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
+                      {renderTeamCell(teamMatchData[parseInt(item)], col as TeamDataOrder)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
           </tbody>
         </table>
+        </div>
       ) : (
         <h2 className="px-20 py-20 text-xl">No data found.</h2>
       )}

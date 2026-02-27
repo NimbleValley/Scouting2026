@@ -17,9 +17,9 @@ export default function Root() {
     }, [rawData])
 
     return (
-        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-fit h-full min-h-screen w-full pt-14 pb-14">
+        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-fit h-screen min-h-screen w-full pt-14 pb-14 pr-7 overflow-x-auto">
             <NavBar />
-            <div className="mx-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit pr-7">
+            <div className="ml-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
                 <Outlet />
             </div>
         </div>
@@ -62,7 +62,6 @@ function compileTeamData(matchData: Database['public']['Tables']['Live Data']['R
             auto_fuel: defaultTeamStatistic,
             auto_pass: defaultTeamStatistic,
             auto_points: defaultTeamStatistic,
-            down_time: defaultTeamStatistic,
             driver_rating: defaultTeamStatistic,
             endgame_points: defaultTeamStatistic,
             match_number: defaultTeamStatistic,

@@ -5,7 +5,6 @@ export interface TeamValues {
         auto_fuel: TeamStatistic
         auto_pass: TeamStatistic
         auto_points: TeamStatistic
-        down_time: TeamStatistic
         driver_rating: TeamStatistic
         endgame_points: TeamStatistic
         match_number: TeamStatistic
