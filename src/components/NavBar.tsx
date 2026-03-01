@@ -18,7 +18,7 @@ export default function NavBar() {
                         <Link to={`contacts/1`}>Ranks</Link>
                     </li>
                     <li>
-                        <Link to={`team/1`}>Teams</Link>
+                        <Link to={`teams`}>Teams</Link>
                     </li>
                     <li>
                         <Link to={`contacts/1`}>Compare</Link>

@@ -19,7 +19,7 @@ export default function Root() {
     return (
         <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-fit h-screen min-h-screen w-full pt-14 pb-14 pr-7 overflow-x-auto">
             <NavBar />
-            <div className="ml-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
+            <div className="ml-7 bg-white flex-1 min-w-[calc(100vw-56px)] rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
                 <Outlet />
             </div>
         </div>
@@ -28,15 +28,16 @@ export default function Root() {
 
 export async function loader(): Promise<LIVE_DATA_COMBINED> {
     const { data: all_match_data } = await supabase.from('Live Data').select('*');
-    console.log(all_match_data)
     const { data: all_pit_data } = await supabase.from('Pit Scouting').select('*');
     const { data: all_pick_list_data } = await supabase.from('Pick List').select('*');
+    const { data: fetched_team_data } = await supabase.from('Fetched Team Data').select('*');
 
     return {
         'all_match_data': all_match_data ?? [],
         'all_pit_data': all_pit_data ?? [],
         'all_pick_list_data': all_pick_list_data ?? [],
         'team_rows': all_match_data ? compileTeamData(all_match_data) : {},
+        'fetched_team_data': fetched_team_data ?? [],
     } as LIVE_DATA_COMBINED;
 }
 

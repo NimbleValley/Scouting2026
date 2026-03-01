@@ -5,10 +5,12 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import "./index.css";
-import Root, {loader as rootLoader} from "./Root";
-import Team from "./team/Team";
+import Root, { loader as rootLoader } from "./Root";
+import Team, { teamPageLoader } from "./team/Team";
 import { Table } from "./table/Table";
 import Home from "./home/Home";
+import Teams from "./all_team/Teams";
+import UpdateFetched from "./update_fetched_data/update_fetched_data";
 
 const router = createBrowserRouter([
   {
@@ -18,14 +20,23 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Home/>,
+        element: <Home />,
       },
       {
         path: "/tables",
-        element: <Table/>,
+        element: <Table />,
+      },
+      {
+        path: "/teams",
+        element: <Teams />,
+      },
+      {
+        path: "/update",
+        element: <UpdateFetched />
       },
       {
         path: "team/:teamNumber",
+        loader: teamPageLoader,
         element: <Team />,
       },
     ]

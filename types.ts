@@ -27,4 +27,5 @@ export interface LIVE_DATA_COMBINED {
         'all_pit_data': Database['public']['Tables']['Pit Scouting']['Row'][];
         'all_pick_list_data': Database['public']['Tables']['Pick List']['Row'][];
         'team_rows': Record<number, TeamValues>;
+        'fetched_team_data': Database['public']['Tables']['Fetched Team Data']['Row'][];
 }
