@@ -8,15 +8,15 @@ const Teams = () => {
 
     return <div className="w-full pt-5 flex-1 flex-col justify-center">
         <h2 className='text-center text-2xl font-rubik font-light w-full mb-5'>Click on a team to select:</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-[8%] px-[5%] gap-y-2 pb-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-[7%] px-[5%] gap-y-2 pb-5">
             {
                 Object.entries(rawData.rawDataCombined.team_rows).map((item, i) => {
                     let f = fetched.find((f) => f.team == parseInt(item[0]));
                     console.log(f);
-                    return <Link to={'/team/' + item[0]} style={{ backgroundColor: `${f?.primary_hex ?? '#ebe8d8'}35` }}
-                        className={`bg-[#ebe8d8]/67 shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-center py-1 gap-3 cursor-pointer hover:ring-2 hover:shadow-md hover:scale-101 transition`}>
-                        <h1 className="font-poppins text-3xl select-none">{item[0]}</h1>
-                        <h2 style={{ color: `${f?.secondary_hex ?? '#000000'}` }} className='text-shadow-lg text-shadow-black/5 text-center text-xl font-rubik font-light select-none'>{f?.team_name ?? 'Unknown'}</h2>
+                    return <Link to={'/team/' + item[0]} 
+                        className={`bg-[#ebe8d8]/67 shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-around px-2 py-1 gap-3 cursor-pointer hover:ring-2 hover:shadow-md hover:scale-101 transition`}>
+                        <h1 className="font-poppins font-light text-3xl select-none">{item[0]}</h1>
+                        <h2 style={{ backgroundColor: `${f?.primary_hex ?? '#ebe8d8'}67`, textShadow: `0px 0px 3px ${f?.secondary_hex ?? '#000000'}85`  }} className='px-2  rounded-lg text-shadow-lg text-shadow-black/5 text-center text-xl font-rubik font-light select-none'>{f?.team_name ?? 'Unknown'}</h2>
 
                     </Link>
                 })

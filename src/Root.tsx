@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import type { LIVE_DATA_COMBINED, TeamStatistic, TeamValues } from '../types';
 import NavBar from "./components/NavBar";
 import { useEffect } from "react";
-import { useRawDataStore } from "./data-store";
+import { TBA_KEY, useRawDataStore } from "./data-store";
 import type { Database } from "../database.types";
 
 export default function Root() {
@@ -12,8 +12,12 @@ export default function Root() {
     const rawDataStore = useRawDataStore();
 
     useEffect(() => {
-        rawDataStore.setRawDataCombined(rawData);
-        console.log(rawDataStore.rawDataCombined)
+        async function e() {
+            rawDataStore.setRawDataCombined(rawData);
+            rawDataStore.setDistrictEventKeys(await fetchEventsWI());
+            console.log(rawDataStore.rawDataCombined);
+        }
+        e();
     }, [rawData])
 
     return (
@@ -32,6 +36,8 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
     const { data: all_pick_list_data } = await supabase.from('Pick List').select('*');
     const { data: fetched_team_data } = await supabase.from('Fetched Team Data').select('*');
 
+    
+
     return {
         'all_match_data': all_match_data ?? [],
         'all_pit_data': all_pit_data ?? [],
@@ -39,6 +45,15 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         'team_rows': all_match_data ? compileTeamData(all_match_data) : {},
         'fetched_team_data': fetched_team_data ?? [],
     } as LIVE_DATA_COMBINED;
+}
+
+async function fetchEventsWI(): Promise<string[]> {
+    let events = await fetch(
+        `https://www.thebluealliance.com/api/v3/district/2026win/events`,
+        { headers: { "X-TBA-Auth-Key": TBA_KEY } }
+    );
+    let parsedEvents = await events.json();
+    return parsedEvents.map((item:any) => item['first_event_code']);
 }
 
 function compileTeamData(matchData: Database['public']['Tables']['Live Data']['Row'][]): Record<number, TeamValues> {
