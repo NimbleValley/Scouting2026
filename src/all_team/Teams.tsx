@@ -1,5 +1,6 @@
 import { Link, useLoaderData } from "react-router-dom";
 import { useRawDataStore } from "../data-store";
+import type { TeamValues } from "../../types";
 
 const Teams = () => {
 
@@ -13,7 +14,7 @@ const Teams = () => {
                 Object.entries(rawData.rawDataCombined.team_rows).map((item, i) => {
                     let f = fetched.find((f) => f.team == parseInt(item[0]));
                     console.log(f);
-                    return <Link to={'/team/' + item[0]} 
+                    return <Link to={'/team/' + item[0]} key={i} 
                         className={`bg-[#ebe8d8]/67 shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-around px-2 py-1 gap-3 cursor-pointer hover:ring-2 hover:shadow-md hover:scale-101 transition`}>
                         <h1 className="font-poppins font-light text-3xl select-none">{item[0]}</h1>
                         <h2 style={{ backgroundColor: `${f?.primary_hex ?? '#ebe8d8'}67`, textShadow: `0px 0px 3px ${f?.secondary_hex ?? '#000000'}85`  }} className='px-2  rounded-lg text-shadow-lg text-shadow-black/5 text-center text-xl font-rubik font-light select-none'>{f?.team_name ?? 'Unknown'}</h2>

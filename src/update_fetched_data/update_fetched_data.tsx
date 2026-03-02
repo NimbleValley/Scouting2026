@@ -41,11 +41,16 @@ const UpdateFetched = () => {
             const colorData = await colorResponse.json();
             console.log(colorData);
 
+            const statboticsResponse = await fetch(`https://api.statbotics.io/v3/team_year/${team}/2026`);
+            const statboticsData = await statboticsResponse.json();
+            console.log(statboticsData);
+
             newData.push({
                 'team': parseInt(team),
                 'primary_hex': colorData.primaryHex,
                 'secondary_hex': colorData.secondaryHex,
                 'team_name': tbaData?.teamData?.[parseInt(team)] ?? 'Unknown',
+                'epa': statboticsData?.epa.breakdown['total_points'],
                 'ai_overview': Object.keys(aiParsed).includes(team) ? aiParsed[team] : null,
             });
         };

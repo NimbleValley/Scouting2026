@@ -1,9 +1,9 @@
 import { Outlet, useLoaderData } from "react-router-dom";
 import { supabase } from '../supabase'
-import type { LIVE_DATA_COMBINED, TeamStatistic, TeamValues } from '../types';
+import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamColumnSorted, TeamStatistic, TeamValues } from '../types';
 import NavBar from "./components/NavBar";
 import { useEffect } from "react";
-import { TBA_KEY, useRawDataStore } from "./data-store";
+import { fetchEventData, TBA_KEY, useRawDataStore } from "./data-store";
 import type { Database } from "../database.types";
 
 export default function Root() {
@@ -15,7 +15,7 @@ export default function Root() {
         async function e() {
             rawDataStore.setRawDataCombined(rawData);
             rawDataStore.setDistrictEventKeys(await fetchEventsWI());
-            console.log(rawDataStore.rawDataCombined);
+            rawDataStore.setEventData(await fetchEventData(rawDataStore.eventKey));
         }
         e();
     }, [rawData])
@@ -36,14 +36,15 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
     const { data: all_pick_list_data } = await supabase.from('Pick List').select('*');
     const { data: fetched_team_data } = await supabase.from('Fetched Team Data').select('*');
 
-    
-
+    const teamRows = all_match_data ? compileTeamData(all_match_data) : {};
     return {
         'all_match_data': all_match_data ?? [],
         'all_pit_data': all_pit_data ?? [],
         'all_pick_list_data': all_pick_list_data ?? [],
-        'team_rows': all_match_data ? compileTeamData(all_match_data) : {},
+        'team_rows': teamRows,
         'fetched_team_data': fetched_team_data ?? [],
+        'team_percentile_thresholds': compileTeamPercentileThresholds(teamRows),
+        'team_columns_sorted': getTeamColumnsSorted(teamRows),
     } as LIVE_DATA_COMBINED;
 }
 
@@ -53,7 +54,7 @@ async function fetchEventsWI(): Promise<string[]> {
         { headers: { "X-TBA-Auth-Key": TBA_KEY } }
     );
     let parsedEvents = await events.json();
-    return parsedEvents.map((item:any) => item['first_event_code']);
+    return parsedEvents.map((item: any) => item['first_event_code']);
 }
 
 function compileTeamData(matchData: Database['public']['Tables']['Live Data']['Row'][]): Record<number, TeamValues> {
@@ -75,16 +76,19 @@ function compileTeamData(matchData: Database['public']['Tables']['Live Data']['R
 
         let tempTeamValues: TeamValues = {
             team_number: 0,
-            auto_fuel: defaultTeamStatistic,
-            auto_pass: defaultTeamStatistic,
-            auto_points: defaultTeamStatistic,
+            auto_fuel_taken_NZ: defaultTeamStatistic,
+            auto_sos: defaultTeamStatistic,
+            defense_strength: defaultTeamStatistic,
             driver_rating: defaultTeamStatistic,
             endgame_points: defaultTeamStatistic,
-            match_number: defaultTeamStatistic,
-            tele_fuel: defaultTeamStatistic,
+            how_defendable: defaultTeamStatistic,
+            tele_fuel_dozed: defaultTeamStatistic,
+            tele_fuel_impacted: defaultTeamStatistic,
+            tele_fuel_passed: defaultTeamStatistic,
+            tele_fuel_scored: defaultTeamStatistic,
             tele_points: defaultTeamStatistic,
-            total_gamepieces: defaultTeamStatistic,
-            total_points: defaultTeamStatistic
+            throughput_speed: defaultTeamStatistic,
+            tioi_rating: defaultTeamStatistic
         };
         let matches = matchData.filter((t) => t.team_number == team);
         if (matches.length < 1)
@@ -125,6 +129,71 @@ function compileTeamData(matchData: Database['public']['Tables']['Live Data']['R
         });
         data[team] = (tempTeamValues);
     });
-    console.log(data)
     return data;
+}
+
+const getPercentile = (sortedList: number[], percentile: number): number => {
+    if (sortedList.length === 0) return 0;
+    const index = Math.ceil(percentile * sortedList.length) - 1;
+    return sortedList[Math.max(0, index)];
+};
+
+function compileTeamPercentileThresholds(teamRows: Record<number, any>): Record<string, StatisticPercentile>[] {
+    const allTeams = Object.values(teamRows);
+    if (allTeams.length === 0) return [];
+
+    // Extract keys from the first team, excluding metadata
+    const statKeys = Object.keys(allTeams[0]).filter(k => k !== 'team_number' && k !== 'match_number');
+    const metrics: (keyof StatisticPercentile)[] = ['min', 'max', 'mean', 'median', 'q3'];
+
+    return statKeys.map((key) => {
+        const percentileData: any = {};
+
+        metrics.forEach((metric) => {
+            const allPoints = allTeams
+                .flatMap((team) => team[key] || [])
+                .map((matchEntry: any) => matchEntry[metric])
+                .filter((val) => typeof val === 'number')
+                .sort((a, b) => a - b);
+
+            percentileData[metric] = {
+                '10': getPercentile(allPoints, 0.10),
+                '25': getPercentile(allPoints, 0.25),
+                '75': getPercentile(allPoints, 0.75),
+                '90': getPercentile(allPoints, 0.90),
+            };
+        });
+
+        return { [key]: percentileData as StatisticPercentile };
+    });
+}
+
+function getTeamColumnsSorted(teamRows: Record<number, any>):Record<string, TeamColumnSorted>[] {
+    const allTeams = Object.values(teamRows);
+    if (allTeams.length === 0) return [];
+
+    const metrics: (keyof StatisticPercentile)[] = ['min', 'max', 'mean', 'median', 'q3'];
+    const statKeys = Object.keys(allTeams[0]).filter(k => k !== 'team_number' && k !== 'match_number');
+
+    return statKeys.map((key) => {
+        const columnData: TeamColumnSorted = {
+            min: [],
+            max: [],
+            median: [],
+            mean: [],
+            q3: []
+        };
+
+        metrics.forEach((metric) => {
+            const allPoints = allTeams
+                .flatMap((team) => team[key] || [])
+                .map((matchEntry: any) => matchEntry[metric])
+                .filter((val) => typeof val === 'number')
+                .sort((a, b) => a - b);
+
+            columnData[metric] = allPoints;
+        });
+
+        return { [key]: columnData as TeamColumnSorted };
+    });
 }
