@@ -1,20 +1,20 @@
-import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamStatistic, TeamValues } from "../../types";
+import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamStatistic, TeamValues, TeamValuesWithFetched } from "../../types";
 import { useEffect, useState } from "react";
 import { useRawDataStore } from "../data-store";
 import { ArrowUpDown, ArrowDown, ArrowUp, Settings, X, HighlighterIcon } from "lucide-react";
 import type { Database } from "../../database.types";
 
-interface RawDataOrder {
+export interface RawDataOrder {
   key: keyof Database['public']['Tables']['Live Data']['Row'];
   label: string;
 }
 
 interface TeamDataOrder {
-  key: keyof TeamValues;
+  key: keyof TeamValuesWithFetched;
   label: string;
 }
 
-const RAW_DATA_ORDER: RawDataOrder[] = [
+export const RAW_DATA_ORDER: RawDataOrder[] = [
   { key: 'team_number', label: "Team" },
   { key: "match_number", label: "Match" },
   { key: "match_type", label: "Match Type" },
@@ -49,8 +49,11 @@ const RAW_DATA_ORDER: RawDataOrder[] = [
   { key: "strategies", label: "Strategies" },
 ];
 
-const TEAM_DATA_ORDER: TeamDataOrder[] = [
+export const TEAM_DATA_ORDER: TeamDataOrder[] = [
   { key: 'team_number', label: 'Team Number' },
+
+  {key: 'opr', label: 'OPR'},
+  {key: 'epa', label: 'EPA'},
 
   { key: 'auto_fuel_taken_NZ', label: 'Auto Fuel NZ' },
   { key: 'auto_sos', label: 'Auto SOS' },
@@ -70,7 +73,7 @@ const TEAM_DATA_ORDER: TeamDataOrder[] = [
   { key: 'how_defendable', label: 'Defendability' },
 ];
 
-const TEXT_VIEW_KEYS = new Set<string>(["comments", "strategies", "auto_issues"]);
+export const TEXT_VIEW_KEYS = new Set<string>(["comments", "strategies", "auto_issues"]);
 
 export const Table = () => {
   const rawData = useRawDataStore();
@@ -86,7 +89,7 @@ export const Table = () => {
 
   const [configOpen, setConfigOpen] = useState(false);
 
-  const [tableType, setTableType] = useState<'Raw' | 'Team'>("Raw");
+  const [tableType, setTableType] = useState<'Raw' | 'Team'>("Team");
   const [statType, setStatType] = useState<'min' | 'max' | 'mean' | 'median' | 'q3'>('q3');
 
   useEffect(() => {
@@ -116,6 +119,7 @@ export const Table = () => {
 
   const rawMatchData = rawData.rawDataCombined.all_match_data;
   const teamMatchData = rawData.rawDataCombined.team_rows;
+  const teamMatchDataWithFetched = rawData.rawDataCombined.team_rows_with_fetched;
   const hasData = rawMatchData.length >= 1;
 
   const [teamFilter, setTeamFilter] = useState<string>('');
@@ -148,34 +152,34 @@ export const Table = () => {
   }
 
   function applyTeamSorting(
-  rows: Record<number, any>,
-  config: { column: string | null; direction: 'asc' | 'desc' | null },
-  valueType: 'min' | 'max' | 'median' | 'mean' | 'q3'
-): any[] {
-  // Convert object to array of values
-  const dataArray = Object.values(rows);
+    rows: Record<number, any>,
+    config: { column: string | null; direction: 'asc' | 'desc' | null },
+    valueType: 'min' | 'max' | 'median' | 'mean' | 'q3'
+  ): any[] {
+    // Convert object to array of values
+    const dataArray = Object.values(rows);
 
-  if (!config.column || !config.direction) return dataArray;
+    if (!config.column || !config.direction) return dataArray;
 
-  return [...dataArray].sort((a, b) => {
-    const statA = a[config.column!];
-    const statB = b[config.column!];
+    return [...dataArray].sort((a, b) => {
+      const statA = a[config.column!];
+      const statB = b[config.column!];
 
-    // Extract values: if it's an object, get the specific statType; otherwise, use the raw value
-    let valA = (statA && typeof statA === 'object') ? statA[valueType] : (statA ?? 0);
-    let valB = (statB && typeof statB === 'object') ? statB[valueType] : (statB ?? 0);
+      // Extract values: if it's an object, get the specific statType; otherwise, use the raw value
+      let valA = (statA && typeof statA === 'object') ? statA[valueType] : (statA ?? 0);
+      let valB = (statB && typeof statB === 'object') ? statB[valueType] : (statB ?? 0);
 
-    // Numeric Sort
-    if (typeof valA === "number" && typeof valB === "number") {
-      return config.direction === "asc" ? valA - valB : valB - valA;
-    }
+      // Numeric Sort
+      if (typeof valA === "number" && typeof valB === "number") {
+        return config.direction === "asc" ? valA - valB : valB - valA;
+      }
 
-    // String Sort Fallback
-    return config.direction === "asc"
-      ? String(valA).localeCompare(String(valB))
-      : String(valB).localeCompare(String(valA));
-  });
-}
+      // String Sort Fallback
+      return config.direction === "asc"
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+  }
 
   const renderRawCell = (item: typeof rawMatchData[number], col: RawDataOrder) => {
     const value = item[col.key];
@@ -233,11 +237,11 @@ export const Table = () => {
 
 
     if (value[statType] <= specificColumn['10']) {
-      return '#fca5a5'; // red-300
+      return '#bb3030bb'; // red-300
     }
 
     if (value[statType] <= specificColumn['25']) {
-      return '#fee2e225'; // red-100
+      return '#fca5a5'; // red-100
     }
 
     if (value[statType] >= specificColumn['90']) {
@@ -257,7 +261,7 @@ export const Table = () => {
         <label htmlFor="data-table-type">Table type:</label>
         <select onChange={(e) => setTableType(e.target.value as 'Raw' | 'Team')} id="data-table-type" className="ml-4 bg-gray-50 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
           <option value={'Raw'}>Raw</option>
-          <option value={'Team'}>Team</option>
+          <option value={'Team'} selected>Team</option>
         </select>
 
         {tableType == 'Raw' &&
@@ -314,32 +318,32 @@ export const Table = () => {
               </tr>
             </thead>
 
-              <tbody>
-  {tableType === 'Raw' 
-    ? applyRawSorting(rawMatchData, sortConfig)
-        .filter((val) => teamFilter.length < 1 || val.team_number.toString().includes(teamFilter))
-        .map((item, i) => (
-          <tr key={item.id} className={i % 3 !== 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"}>
-            {RAW_DATA_ORDER.map((col, t) => (
-              <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
-                {renderRawCell(item, col as RawDataOrder)}
-              </td>
-            ))}
-          </tr>
-        )) 
-    : applyTeamSorting(teamMatchData, sortConfig as any, statType)
-        .map((item, i) => (
-          <tr key={item.team_number} className={i % 3 !== 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"}>
-            {TEAM_DATA_ORDER.map((col, t) => (
-              <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
-                {/* We pass 'item' directly now because it's the data object, not a key */}
-                {renderTeamCell(item, col as TeamDataOrder, statType)}
-              </td>
-            ))}
-          </tr>
-        ))
-  }
-</tbody>
+            <tbody>
+              {tableType === 'Raw'
+                ? applyRawSorting(rawMatchData, sortConfig)
+                  .filter((val) => teamFilter.length < 1 || val.team_number.toString().includes(teamFilter))
+                  .map((item, i) => (
+                    <tr key={item.id} className={i % 3 !== 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"}>
+                      {RAW_DATA_ORDER.map((col, t) => (
+                        <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
+                          {renderRawCell(item, col as RawDataOrder)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                : applyTeamSorting(teamMatchDataWithFetched, sortConfig as any, statType)
+                  .map((item, i) => (
+                    <tr key={item.team_number} className={i % 3 !== 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50 hover:bg-gray-100"}>
+                      {TEAM_DATA_ORDER.map((col, t) => (
+                        <td key={t} className="border-y border-gray-200 px-3 py-2 text-center">
+                          {/* We pass 'item' directly now because it's the data object, not a key */}
+                          {renderTeamCell(item, col as TeamDataOrder, statType)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+              }
+            </tbody>
           </table>
         </div>
       ) : (

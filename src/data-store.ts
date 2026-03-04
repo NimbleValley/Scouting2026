@@ -21,10 +21,12 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
         all_match_data: [],
         all_pit_data: [],
         all_pick_list_data: [],
+        pit_scout_data: [],
         team_rows: [],
         fetched_team_data: [],
         team_percentile_thresholds: [],
         team_columns_sorted: [],
+        team_rows_with_fetched: [],
     },
     eventData: null,
     districtEventKeys: [],
@@ -46,7 +48,7 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
 interface OPRData {
     'ccwms': Record<string, number>[],
     'dprs': Record<string, number>[],
-    'oprs': Record<string, number>,
+    'oprs': Record<string, number>[],
 }
 
 export interface MatchesData {

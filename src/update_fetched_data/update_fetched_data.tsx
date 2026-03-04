@@ -50,7 +50,7 @@ const UpdateFetched = () => {
                 'primary_hex': colorData.primaryHex,
                 'secondary_hex': colorData.secondaryHex,
                 'team_name': tbaData?.teamData?.[parseInt(team)] ?? 'Unknown',
-                'epa': statboticsData?.epa.breakdown['total_points'],
+                'epa': Object.keys(statboticsData).length > 0 ? statboticsData?.epa?.breakdown['total_points'] : -1,
                 'ai_overview': Object.keys(aiParsed).includes(team) ? aiParsed[team] : null,
             });
         };
@@ -124,7 +124,8 @@ const UpdateFetched = () => {
             ]
         }
             `,
-            'Only include the teams in the array below...',
+            'Your response should only be valid JSON and nothing else, make sure it can be parsed directly.',
+            'Only include the teams in the arrays below...',
             JSON.stringify(rawData.rawDataCombined.all_match_data),
             JSON.stringify(rawData.rawDataCombined.team_rows),
         ];

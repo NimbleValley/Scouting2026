@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
+  createHashRouter,
   RouterProvider,
 } from "react-router-dom";
 import "./index.css";
@@ -12,7 +13,7 @@ import Home from "./home/Home";
 import Teams from "./all_team/Teams";
 import UpdateFetched from "./update_fetched_data/update_fetched_data";
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: "/",
     element: <Root></Root>,
