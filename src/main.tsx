@@ -12,6 +12,7 @@ import { Table } from "./table/Table";
 import Home from "./home/Home";
 import Teams from "./all_team/Teams";
 import UpdateFetched from "./update_fetched_data/update_fetched_data";
+import Pick from "./pick/Pick";
 
 const router = createHashRouter([
   {
@@ -34,6 +35,10 @@ const router = createHashRouter([
       {
         path: "/update",
         element: <UpdateFetched />
+      },
+      {
+        path: "/pick",
+        element: <Pick />
       },
       {
         path: "team/:teamNumber",
