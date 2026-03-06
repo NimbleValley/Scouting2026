@@ -16,9 +16,10 @@ export default function Root() {
             rawDataStore.setRawDataCombined(rawData);
             rawDataStore.setDistrictEventKeys(await fetchEventsWI());
             rawDataStore.setEventData(await fetchEventData(rawDataStore.eventKey));
+            rawDataStore.loadTeamImages();
         }
         e();
-    }, [rawData])
+    }, [rawData.all_match_data]);
 
     return (
         <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-full h-screen overflow-y-auto pt-14 pb-14 pr-7">
@@ -63,23 +64,23 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         min: val, max: val, median: val, mean: val, q3: val
     });
 
-    // 2. Build the Record using the keys from teamRows (Compiled Team Summaries)
+    // keys from teamRows (Compiled Team Summaries)
     const team_rows_with_fetched: Record<number, any> = {};
 
     Object.keys(teamRows).forEach((teamStr) => {
         const teamNum = parseInt(teamStr);
         const fetched = fetchedTeamMap.get(teamNum);
-        const oprVal = oprMap.get(teamStr) ?? -1;
+        const oprVal = oprMap.get('frc' + teamStr) ?? -1;
 
         team_rows_with_fetched[teamNum] = {
-            ...teamRows[teamNum], // Spread the existing compiled data (averages/sums)
+            ...teamRows[teamNum],
             epa: stat(fetched?.epa ?? -1),
             opr: stat(oprVal),
             auto_fuel: stat(-1), 
         };
     });
 
-    console.log(team_rows_with_fetched)
+    console.log(team_rows_with_fetched);
 
     return {
         all_match_data: all_match_data ?? [],

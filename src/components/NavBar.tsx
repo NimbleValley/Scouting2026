@@ -32,6 +32,7 @@ export default function NavBar() {
                             Teams
                         </li>
                     </Link>
+                    {/*
                     <Link to={'/compare'}>
                         <li>
                             Compare
@@ -47,6 +48,7 @@ export default function NavBar() {
                             Match
                         </li>
                     </Link>
+                    */}
                     <Link to={'/pick'}>
                         <li>
                             Pick

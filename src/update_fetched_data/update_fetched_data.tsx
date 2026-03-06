@@ -150,8 +150,10 @@ const UpdateFetched = () => {
     return <div className="w-full pt-5 flex flex-1 flex-col justify-center items-center pb-10 gap-5">
         <h2 className='text-center text-3xl font-rubik font-light w-full mb-5'>Update Fetched Data</h2>
         <select value={rawData.eventKey} onChange={(e) => rawData.setEventKey(e.target.value)} id="event-key-select" className="bg-[#ebe8d8]/67 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
-            {rawData.districtEventKeys.map((key, i) =>
-                <option key={i} value={key}>{key}</option>
+            {rawData.districtEventKeys.map((key, i) => {
+            console.log("Current Event Key:", rawData.eventKey);
+             return   <option key={i} value={key}>{key}</option>
+            }
             )}
         </select>
         <button onClick={updateData} className="bg-[#ebe8d8]/67 text-xl px-5 py-2 w-fit shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-center gap-3 cursor-pointer hover:ring-2 hover:shadow-md hover:scale-101 transition">

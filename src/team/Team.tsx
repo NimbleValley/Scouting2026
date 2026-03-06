@@ -1,9 +1,9 @@
 import { Link, useLoaderData } from "react-router-dom";
 import { useRawDataStore } from "../data-store";
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, LoaderPinwheel, LogOut, TowerControl, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Check, LoaderPinwheel, LogOut, TowerControl, X } from "lucide-react";
 import type { TeamColumnSorted, TeamStatistic, TeamValues } from "../../types";
 import { RAW_DATA_ORDER, TEAM_DATA_ORDER, TEXT_VIEW_KEYS, type RawDataOrder } from "../table/Table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export async function teamPageLoader({ params }: { params: any }) {
     return { 'team': params.teamNumber };
@@ -11,7 +11,7 @@ export async function teamPageLoader({ params }: { params: any }) {
 
 const Team = () => {
 
-    const bannerDataOrder: (keyof TeamValues)[] = ['tele_fuel_scored', 'driver_rating', 'endgame_points', 'tele_fuel_impacted'];
+    const bannerDataOrder: (keyof TeamValues)[] = ['tele_fuel_scored', 'driver_rating', 'auto_sos', 'tele_fuel_impacted', 'throughput_speed', 'tioi_rating'];
 
     const { team } = useLoaderData();
     const rawData = useRawDataStore();
@@ -106,6 +106,19 @@ const Team = () => {
     const fetchedTeam = rawData.rawDataCombined.fetched_team_data.find((t) => t.team == team);
     const pitTeam = rawData.rawDataCombined.pit_scout_data.find((p) => p.team_number == team);
 
+    const [teamImages, setTeamImages] = useState<string[]>([]);
+    const [imageIndex, setImageIndex] = useState(0);
+
+    useEffect(() => {
+        const key = Number(team);
+        if (rawData.teamImages && rawData.teamImages[key]) {
+            setTeamImages(rawData.teamImages[key]);
+            console.log(rawData.teamImages[key]);
+        } else {
+            setTeamImages([]);
+        }
+    }, [rawData.teamImages, team]);
+
     if (!Object.keys(rawData.rawDataCombined.team_rows).includes(team)) {
         return <div className="flex-1 py-15 flex flex-col items-center bg-white gap-5 px-50 text-center rounded-b-lg">
             <h1 className='font-poppins text-4xl underline mb-5'>Team Not Found</h1>
@@ -130,10 +143,24 @@ const Team = () => {
             </div>
         </div>
         <div className="w-full flex flex-col md:flex-row justify-between gap-7">
-            {fetchedTeam?.ai_overview &&
-                <div className="transition duration-250 hover:border-black border-1 font-rubik font-light text-lg bg-[#ebe8d8]/67 border-gray-600 py-3 px-1 rounded-lg flex-1">{fetchedTeam.ai_overview}</div>
-            }
-            <div className="flex-1 grid grid-cols-2 md:flex md:flex-row justify-between gap-2">
+            <div className="flex flex-col flex-1 gap-2 items-center">
+                {
+                    teamImages.length > 0 &&
+                    <div className="flex flex-row gap-2 items-center">
+                        {teamImages.length > 1 &&
+                            <ArrowLeft onClick={() => setImageIndex((prev) => prev - 1 >= 0 ? prev - 1 : teamImages.length - 1)} size={28} className="hover:scale-107 cursor-pointer" />
+                        }
+                        <img className="max-h-40 rounded-xl object-contain" src={teamImages[imageIndex]}></img>
+                        {teamImages.length > 1 &&
+                            <ArrowRight onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev+ 1)} size={28} className="hover:scale-107 cursor-pointer" />
+                        }
+                    </div>
+                }
+                {fetchedTeam?.ai_overview &&
+                    <div className="transition flex flex-row items-center duration-250 hover:border-black border-1 font-rubik font-light text-lg bg-[#ebe8d8]/67 border-gray-600 py-3 px-1 rounded-lg flex-1"><p>{fetchedTeam.ai_overview}</p></div>
+                }
+            </div>
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-between gap-2">
                 {
                     bannerDataOrder.map((key, i) => {
                         return <div key={i} className="width-fit bg-gray-100 border-1 border-gray-600 rounded-lg shadow-sm flex-1 flex flex-col gap-[2px] items-center justify-center transition duration-250 hover:-translate-y-[3px]">
@@ -149,7 +176,7 @@ const Team = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 w-full md:mt-2 bg-orange-100 py-4 rounded-lg">
 
             <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
-                <h1 className='font-poppins text-5xl font-light ml-2'>Auto</h1>
+                <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Auto</h1>
                 <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.auto_issues && t.match_type == 'match').map((r, i) => {
@@ -163,7 +190,7 @@ const Team = () => {
             </div>
 
             <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
-                <h1 className='font-poppins text-5xl font-light ml-2'>Strategy</h1>
+                <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Strategy</h1>
                 <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.strategies.length > 5 && t.match_type == 'match').map((r, i) => {
@@ -177,7 +204,7 @@ const Team = () => {
             </div>
 
             <div className="flex flex-col items-start justify-space-between px-5 gap-3">
-                <h1 className='font-poppins text-5xl font-light ml-2'>Comments</h1>
+                <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Comments</h1>
                 <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.match_type == 'match').map((r, i) => {
@@ -194,7 +221,7 @@ const Team = () => {
 
         <div className="flex flex-col items-start justify-space-between px-5 gap-3 w-full my-5">
             <div className="flex flex-row items-center justify-between w-full gap-5">
-                <h1 className='font-poppins text-5xl font-light ml-2'>Pit Scouting</h1>
+                <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Pit Scouting</h1>
                 <div className="flex-1 h-[1px] bg-black w-full"></div>
             </div>
             <div className=" overflow-y-auto w-full flex flex-col bg-[#F1EFE5] min-h-12 p-2 justify-center rounded-md gap-2">
@@ -262,9 +289,6 @@ const Team = () => {
                     </thead>
 
                     <tbody>
-                        {/* Note: Make sure you filter this by the current 'team' 
-                   if you only want to show that team's matches! 
-                */}
                         {applyRawSorting(rawMatchData.filter(m => String(m.team_number) === String(team)), sortConfig)
                             .map((item, i) => (
                                 <tr
