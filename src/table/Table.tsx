@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRawDataStore } from "../data-store";
 import { ArrowUpDown, ArrowDown, ArrowUp, Settings, X, HighlighterIcon } from "lucide-react";
 import type { Database } from "../../database.types";
+import { Link } from "react-router-dom";
 
 export interface RawDataOrder {
   key: keyof Database['public']['Tables']['Live Data']['Row'];
@@ -52,9 +53,10 @@ export const RAW_DATA_ORDER: RawDataOrder[] = [
 export const TEAM_DATA_ORDER: TeamDataOrder[] = [
   { key: 'team_number', label: 'Team Number' },
 
-  {key: 'opr', label: 'OPR'},
-  {key: 'epa', label: 'EPA'},
+  { key: 'opr', label: 'OPR' },
+  { key: 'epa', label: 'EPA' },
 
+  { key: 'auto_fuel', label: 'Auto Fuel' },
   { key: 'auto_fuel_taken_NZ', label: 'Auto Fuel NZ' },
   { key: 'auto_sos', label: 'Auto SOS' },
 
@@ -202,14 +204,14 @@ export const Table = () => {
 
     if (col.key === 'match_number') {
       return (
-        <span className="font-medium text-gray-800">
+        <span className="font-medium text-gray-900">
           {item.match_type === 'match' ? item.match_number : item.match_type === 'practice' ? "Practice" : 'Pre'}
         </span>
       );
     }
 
     return (
-      <span className="text-gray-700">
+      <span className="text-gray-900">
         {(value && String(value) !== 'null') ? (typeof value == 'number' ? String(Math.round(value * 10) / 10) : value) : "---"}
       </span>
     );
@@ -221,8 +223,16 @@ export const Table = () => {
     const isNumber = typeof value == 'number';
     let percentileColor = (!value || isNumber || !percentileHighlight) ? '' : getTeamPercentileColor(value, col, statType, rawData.rawDataCombined.team_percentile_thresholds);
 
+    if (col.key == 'team_number') {
+      return (
+        <Link to={'/team/' + value} className={`text-gray-900 rounded-md px-5 py-[2px] hover:font-bold cursor-pointer`} style={{ backgroundColor: percentileColor }}>
+          {isNumber ? String(value) : (value ? Math.round(value[statType] * 10) / 10 : '-')}
+        </Link>
+      );
+    }
+
     return (
-      <span className={`text-gray-700 rounded-md px-5 py-[2px] `} style={{ backgroundColor: percentileColor }}>
+      <span className={`text-gray-900 rounded-md px-5 py-[2px] `} style={{ backgroundColor: percentileColor }}>
         {isNumber ? String(value) : (value ? Math.round(value[statType] * 10) / 10 : '-')}
       </span>
     );
@@ -237,11 +247,11 @@ export const Table = () => {
 
 
     if (value[statType] <= specificColumn['10']) {
-      return '#bb3030bb'; // red-300
+      return '#ec090983'; // red-300
     }
 
     if (value[statType] <= specificColumn['25']) {
-      return '#fca5a5'; // red-100
+      return '#eeccb5ff'; // red-100
     }
 
     if (value[statType] >= specificColumn['90']) {
@@ -257,7 +267,7 @@ export const Table = () => {
 
   return (
     <div className="relative h-full">
-      <div className={`${configOpen ? 'sticky z-25 shadow-sm' : ''} h-10 bg-[#FFFFFF] sticky top-0 left-0 transition flex flex-row w-fit rounded-b-lg items-center pl-10 pr-5`}>
+      <div className={`${configOpen ? 'sticky z-25 shadow-sm' : ''} h-10 bg-[#FFFFFF] sticky top-0 lg:left-0 transition flex flex-row lg:flex-row w-fit rounded-b-lg items-center pl-10 pr-5`}>
         <label htmlFor="data-table-type">Table type:</label>
         <select onChange={(e) => setTableType(e.target.value as 'Raw' | 'Team')} id="data-table-type" className="ml-4 bg-gray-50 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
           <option value={'Raw'}>Raw</option>

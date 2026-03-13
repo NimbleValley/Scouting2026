@@ -1,9 +1,10 @@
 import { Link, useLoaderData } from "react-router-dom";
 import { useRawDataStore } from "../data-store";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Check, LoaderPinwheel, LogOut, TowerControl, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, ChartLine, Check, LoaderPinwheel, LogOut, TowerControl, X } from "lucide-react";
 import type { TeamColumnSorted, TeamStatistic, TeamValues } from "../../types";
 import { RAW_DATA_ORDER, TEAM_DATA_ORDER, TEXT_VIEW_KEYS, type RawDataOrder } from "../table/Table";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export async function teamPageLoader({ params }: { params: any }) {
     return { 'team': params.teamNumber };
@@ -18,6 +19,19 @@ const Team = () => {
 
     const rawMatchData = rawData.rawDataCombined.all_match_data;
     const hasData = rawMatchData.length >= 1;
+
+    const [selectedStat, setSelectedStat] = useState<string>('tele_fuel_scored');
+    const chartData = useMemo(() => {
+        return rawMatchData
+            .filter(m => String(m.team_number) === String(team) && m.match_type === 'match')
+            .sort((a, b) => Number(a.match_number) - Number(b.match_number))
+            .map(m => ({
+                match: `M${m.match_number}`,
+                value: m[selectedStat] ?? 0,
+                fullMatch: m.match_number
+            }));
+    }, [rawMatchData, team, selectedStat]);
+    const availableStats = TEAM_DATA_ORDER.filter(col => !TEXT_VIEW_KEYS.has(col.key) && col.key !== 'match_number' && col.key !== 'team_number');
 
     function applyRawSorting<T extends Record<string, any>>(rows: T[], config: typeof sortConfig): T[] {
         if (!config.column || !config.direction) return rows;
@@ -137,8 +151,16 @@ const Team = () => {
                 <h3 className='text-3xl font-light font-rubik'>{rawData.rawDataCombined.fetched_team_data.find((t) => t.team == team)?.team_name ?? 'Unknown'}</h3>
             </div>
             <div className="w-full font-rubik flex flex-row items-center text-xl justify-center md:justify-end gap-4">
+                <div onClick={() => window.open(`https://www.statbotics.io/team/${team}`)} className="bg-gray-400 cursor-pointer w-[30px] h-[30px] p-[5px] rounded-md flex items-center justify-center">
+                    <img src="https://www.statbotics.io/circ_favicon.ico" className="max-h-full" />
+                </div>
+
+                <div onClick={() => window.open(`https://www.thebluealliance.com/team/${team}#2026wiply`)} className="bg-[#3F51B5] cursor-pointer w-[30px] h-[30px] p-[5px] rounded-md flex items-center justify-center">
+                    <img src="https://www.thebluealliance.com/images/tba_lamp.svg" className="max-h-full" />
+                </div>
+
                 <h1>Rank: {rawData.eventData?.rankings.rankings.find((item) => item.team_key == 'frc' + team)?.rank ?? '-'}</h1>
-                <h1>OPR: {rawData.eventData?.opr.oprs['frc' + String(team)]?.toFixed(1) ?? '-'}</h1>
+                <h1>OPR: {(rawData.eventData?.opr?.oprs != null && Object.keys(rawData.eventData?.opr?.oprs).length > 0) ? (rawData.eventData?.opr?.oprs['frc' + String(team)]?.toFixed(1) ?? '-') : '-'}</h1>
                 <h1>EPA: {rawData.rawDataCombined.fetched_team_data.find((t) => t.team == team)?.epa ?? '-'}</h1>
             </div>
         </div>
@@ -152,7 +174,7 @@ const Team = () => {
                         }
                         <img className="max-h-40 rounded-xl object-contain" src={teamImages[imageIndex]}></img>
                         {teamImages.length > 1 &&
-                            <ArrowRight onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev+ 1)} size={28} className="hover:scale-107 cursor-pointer" />
+                            <ArrowRight onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev + 1)} size={28} className="hover:scale-107 cursor-pointer" />
                         }
                     </div>
                 }
@@ -265,6 +287,58 @@ const Team = () => {
                 }
             </div>
         </div>
+
+
+
+
+        <div className="w-full bg-gray-50 p-6 rounded-xl border border-gray-500 max-w-240">
+            <div className="flex flex-row items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                    <ChartLine className="text-orange-400" />
+                    <h2 className="font-poppins text-2xl font-light">Performance Trend</h2>
+                </div>
+                <select
+                    className="bg-white border border-gray-300 rounded-md px-3 py-1 font-rubik outline-none focus:ring-2 ring-orange-400"
+                    value={selectedStat}
+                    onChange={(e) => setSelectedStat(e.target.value)}
+                >
+                    {availableStats.map(s => (
+                        <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="h-64 w-full">
+                {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                            <XAxis dataKey="match" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                            <Tooltip animationDuration={0}
+                                contentStyle={{ borderRadius: '8px', border: 'none' }}
+                                labelStyle={{ fontWeight: 'bold', color: '#f97316' }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="value"
+                                name={underscoreToNormal(selectedStat)}
+                                stroke="#f39529ff"
+                                isAnimationActive={false}
+                                animationDuration={0}
+                                strokeWidth={3}
+                                dot={{ r: 6, fill: '#f39529ff', strokeWidth: 2, stroke: '#fff' }}
+                                activeDot={{ r: 8, strokeWidth: 0 }}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 italic">No match data available for chart. Only real matches are included.</div>
+                )}
+            </div>
+        </div>
+
+
 
         {hasData ? (
             /* Changed max-w-200 to w-full and overflow-x-scroll to overflow-x-auto */

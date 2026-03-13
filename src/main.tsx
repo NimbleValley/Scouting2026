@@ -13,6 +13,7 @@ import Home from "./home/Home";
 import Teams from "./all_team/Teams";
 import UpdateFetched from "./update_fetched_data/update_fetched_data";
 import Pick from "./pick/Pick";
+import Compare from "./compare/Compare";
 
 const router = createHashRouter([
   {
@@ -31,6 +32,10 @@ const router = createHashRouter([
       {
         path: "/teams",
         element: <Teams />,
+      },
+      {
+        path: "/compare",
+        element: <Compare />,
       },
       {
         path: "/update",

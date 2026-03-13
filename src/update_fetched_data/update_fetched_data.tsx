@@ -2,11 +2,13 @@ import { Link, useLoaderData } from "react-router-dom";
 import { TBA_KEY, useRawDataStore } from "../data-store";
 import { supabase } from "../../supabase";
 import type { Database } from "../../database.types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getGenerativeModel } from "firebase/ai";
 import { ai, db } from "../../firebase";
 
 const UpdateFetched = () => {
+
+    const rawData = useRawDataStore();
 
     const generationConfig = {
         temperature: 0.6,
@@ -14,9 +16,13 @@ const UpdateFetched = () => {
         topK: 16,
     };
 
-    const model = getGenerativeModel(ai, { model: "gemini-3-flash-preview", generationConfig, systemInstruction: "You are a scouting assistant on team 3197, the hexhounds, competing in FRC robotics. give helpful tips that will help our team win, use insights from our data to answer questions" });
+    const [localValue, setLocalValue] = useState(rawData.eventKey);
+    useEffect(() => {
+        setLocalValue(rawData.eventKey);
+        console.warn(rawData.eventKey)
+    }, [rawData.eventKey]);
 
-    const rawData = useRawDataStore();
+    const model = getGenerativeModel(ai, { model: "gemini-3-flash-preview", generationConfig, systemInstruction: "You are a scouting assistant on team 3197, the hexhounds, competing in FRC robotics. give helpful tips that will help our team win, use insights from our data to answer questions" });
 
     const updateData = async () => {
         //if (prompt('Password?') != 'chomp')
@@ -36,24 +42,40 @@ const UpdateFetched = () => {
         const tbaData = await fetchTbaEventData(rawData.eventKey);
 
         for (const team of teams) {
+            let colorData = null;
+            let statboticsData = null;
 
-            const colorResponse = await fetch('https://api.frc-colors.com/v1/team/' + team);
-            const colorData = await colorResponse.json();
-            console.log(colorData);
+            // 1. Independent Color Fetch
+            try {
+                const colorResponse = await fetch(`https://api.frc-colors.com/v1/team/${team}`);
+                if (colorResponse.ok) {
+                    colorData = await colorResponse.json();
+                }
+            } catch (err) {
+                console.error(`Color fetch failed for ${team}:`, err);
+            }
 
-            const statboticsResponse = await fetch(`https://api.statbotics.io/v3/team_year/${team}/2026`);
-            const statboticsData = await statboticsResponse.json();
-            console.log(statboticsData);
+            // 2. Independent Statbotics Fetch
+            try {
+                const statboticsResponse = await fetch(`https://api.statbotics.io/v3/team_year/${team}/2026`);
+                if (statboticsResponse.ok) {
+                    statboticsData = await statboticsResponse.json();
+                }
+            } catch (err) {
+                console.error(`Statbotics fetch failed for ${team}:`, err);
+            }
 
+            // 3. Combine results with safe fallbacks
             newData.push({
                 'team': parseInt(team),
-                'primary_hex': colorData.primaryHex,
-                'secondary_hex': colorData.secondaryHex,
+                'primary_hex': colorData?.primaryHex ?? '#FFFFFF',
+                'secondary_hex': colorData?.secondaryHex ?? '#000000',
                 'team_name': tbaData?.teamData?.[parseInt(team)] ?? 'Unknown',
-                'epa': Object.keys(statboticsData).length > 0 ? statboticsData?.epa?.breakdown['total_points'] : -1,
-                'ai_overview': Object.keys(aiParsed).includes(team) ? aiParsed[team] : null,
+                'epa': statboticsData?.epa?.breakdown?.['total_points'] ?? -1,
+                'ai_overview': aiParsed[team] ?? null,
             });
-        };
+        }
+
 
         console.log(newData);
 
@@ -115,7 +137,7 @@ const UpdateFetched = () => {
     async function generateAIOverviewsTeamsJSON() {
 
         const context = [
-            `Provide a team overview for each team. Respond in a sentence or two, give a quick overview of the team with any things. Ensure the data has a reliable source. that stand otu from the rest. in the following format as a VALID JSON, 9999 being their team number:
+            `Provide a team overview for each team. Respond in two sentences, give a quick overview of the team with any things. Ensure the data has a reliable source. that stand otu from the rest. in the following format as a VALID JSON, 9999 being their team number:
             {
             [
             9999: {
@@ -149,10 +171,10 @@ const UpdateFetched = () => {
 
     return <div className="w-full pt-5 flex flex-1 flex-col justify-center items-center pb-10 gap-5">
         <h2 className='text-center text-3xl font-rubik font-light w-full mb-5'>Update Fetched Data</h2>
-        <select value={rawData.eventKey} onChange={(e) => rawData.setEventKey(e.target.value)} id="event-key-select" className="bg-[#ebe8d8]/67 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
+        <select onChange={(e) => rawData.setEventKey(e.target.value)} id="event-key-select" className="bg-[#ebe8d8]/67 px-3 min-w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
             {rawData.districtEventKeys.map((key, i) => {
-            console.log("Current Event Key:", rawData.eventKey);
-             return   <option key={i} value={key}>{key}</option>
+                console.log("Current Event Key:", rawData.eventKey);
+                return <option key={i} value={key}>{key}</option>
             }
             )}
         </select>

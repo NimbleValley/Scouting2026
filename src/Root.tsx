@@ -46,10 +46,13 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         fetchEventData(localStorage.getItem('event-key') ?? '2026wiply')
     ]);
 
+    console.log(fetched_team_data)
+
     // 1. Safe OPR Map creation
     const oprMap = new Map<string, number>();
     const oprSource = eventDataRes?.opr?.oprs;
-    
+    console.warn(eventDataRes)
+
     if (oprSource) {
         // If it's an object { "123": 10 }, use Object.entries
         Object.entries(oprSource).forEach(([team, val]) => {
@@ -72,11 +75,12 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         const fetched = fetchedTeamMap.get(teamNum);
         const oprVal = oprMap.get('frc' + teamStr) ?? -1;
 
+
         team_rows_with_fetched[teamNum] = {
             ...teamRows[teamNum],
             epa: stat(fetched?.epa ?? -1),
             opr: stat(oprVal),
-            auto_fuel: stat(-1), 
+            auto_fuel: stat(-1),
         };
     });
 
@@ -87,11 +91,11 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         all_pit_data: all_pit_data ?? [],
         all_pick_list_data: all_pick_list_data ?? [],
         team_rows: teamRows,
+        fetched_team_data: fetched_team_data,
         team_rows_with_fetched: team_rows_with_fetched,
-        fetched_team_data: fetched_team_data ?? [],
-        team_percentile_thresholds: compileTeamPercentileThresholds(team_rows_with_fetched),
-        team_columns_sorted: getTeamColumnsSorted(team_rows_with_fetched),
         pit_scout_data: all_pit_data ?? [],
+        team_columns_sorted: getTeamColumnsSorted(teamRows),
+        team_percentile_thresholds: compileTeamPercentileThresholds(team_rows_with_fetched),
     } as LIVE_DATA_COMBINED;
 }
 

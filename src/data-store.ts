@@ -169,7 +169,7 @@ export interface EventData {
 
 export async function fetchEventData(eventKey: string): Promise<EventData | null> {
     if (!eventKey) return null;
-    eventKey = '2026week0'
+    eventKey = '2026wiply'
     try {
         const [rankingsRes, oprsRes, matchesRes] = await Promise.all([
             fetch(
