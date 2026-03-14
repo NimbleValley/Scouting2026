@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
+  createHashRouter,
   RouterProvider,
 } from "react-router-dom";
 import "./index.css";
@@ -11,8 +12,10 @@ import { Table } from "./table/Table";
 import Home from "./home/Home";
 import Teams from "./all_team/Teams";
 import UpdateFetched from "./update_fetched_data/update_fetched_data";
+import Pick from "./pick/Pick";
+import Compare from "./compare/Compare";
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: "/",
     element: <Root></Root>,
@@ -31,8 +34,16 @@ const router = createBrowserRouter([
         element: <Teams />,
       },
       {
+        path: "/compare",
+        element: <Compare />,
+      },
+      {
         path: "/update",
         element: <UpdateFetched />
+      },
+      {
+        path: "/pick",
+        element: <Pick />
       },
       {
         path: "team/:teamNumber",

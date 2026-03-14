@@ -1,6 +1,6 @@
 import { Outlet, useLoaderData } from "react-router-dom";
 import { supabase } from '../supabase'
-import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamColumnSorted, TeamStatistic, TeamValues } from '../types';
+import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamColumnSorted, TeamStatistic, TeamValues, TeamValuesWithFetched } from '../types';
 import NavBar from "./components/NavBar";
 import { useEffect } from "react";
 import { fetchEventData, TBA_KEY, useRawDataStore } from "./data-store";
@@ -16,14 +16,15 @@ export default function Root() {
             rawDataStore.setRawDataCombined(rawData);
             rawDataStore.setDistrictEventKeys(await fetchEventsWI());
             rawDataStore.setEventData(await fetchEventData(rawDataStore.eventKey));
+            rawDataStore.loadTeamImages();
         }
         e();
-    }, [rawData])
+    }, [rawData.all_match_data]);
 
     return (
-        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-fit h-screen min-h-screen w-full pt-14 pb-14 pr-7 overflow-x-auto">
+        <div className="bg-[#ebe8d8] dark:bg-[#4C8695] w-full h-screen overflow-y-auto pt-14 pb-14 pr-7">
             <NavBar />
-            <div className="ml-7 bg-white flex-1 min-w-[calc(100vw-56px)] rounded-b-xl z-20 relative min-h-20 h-fit w-fit">
+            <div className="ml-7 bg-white flex-1 rounded-b-xl z-20 relative min-h-20 h-fit w-fit min-w-[calc(100%-1.75rem)]">
                 <Outlet />
             </div>
         </div>
@@ -31,20 +32,70 @@ export default function Root() {
 }
 
 export async function loader(): Promise<LIVE_DATA_COMBINED> {
-    const { data: all_match_data } = await supabase.from('Live Data').select('*');
-    const { data: all_pit_data } = await supabase.from('Pit Scouting').select('*');
-    const { data: all_pick_list_data } = await supabase.from('Pick List').select('*');
-    const { data: fetched_team_data } = await supabase.from('Fetched Team Data').select('*');
+    const [
+        { data: all_match_data },
+        { data: all_pit_data },
+        { data: all_pick_list_data },
+        { data: fetched_team_data },
+        eventDataRes
+    ] = await Promise.all([
+        supabase.from('Live Data').select('*'),
+        supabase.from('Pit Scouting').select('*'),
+        supabase.from('Pick List').select('*'),
+        supabase.from('Fetched Team Data').select('*'),
+        fetchEventData(localStorage.getItem('event-key') ?? '2026wiply')
+    ]);
 
+    console.log(fetched_team_data)
+
+    // 1. Safe OPR Map creation
+    const oprMap = new Map<string, number>();
+    const oprSource = eventDataRes?.opr?.oprs;
+    console.warn(eventDataRes)
+
+    if (oprSource) {
+        // If it's an object { "123": 10 }, use Object.entries
+        Object.entries(oprSource).forEach(([team, val]) => {
+            oprMap.set(team, val as number);
+        });
+    }
+
+    const fetchedTeamMap = new Map(fetched_team_data?.map(t => [t.team, t]));
     const teamRows = all_match_data ? compileTeamData(all_match_data) : {};
+
+    const stat = (val: number) => ({
+        min: val, max: val, median: val, mean: val, q3: val
+    });
+
+    // keys from teamRows (Compiled Team Summaries)
+    const team_rows_with_fetched: Record<number, any> = {};
+
+    Object.keys(teamRows).forEach((teamStr) => {
+        const teamNum = parseInt(teamStr);
+        const fetched = fetchedTeamMap.get(teamNum);
+        const oprVal = oprMap.get('frc' + teamStr) ?? -1;
+
+
+        team_rows_with_fetched[teamNum] = {
+            ...teamRows[teamNum],
+            epa: stat(fetched?.epa ?? -1),
+            opr: stat(oprVal),
+            auto_fuel: stat(-1),
+        };
+    });
+
+    console.log(team_rows_with_fetched);
+
     return {
-        'all_match_data': all_match_data ?? [],
-        'all_pit_data': all_pit_data ?? [],
-        'all_pick_list_data': all_pick_list_data ?? [],
-        'team_rows': teamRows,
-        'fetched_team_data': fetched_team_data ?? [],
-        'team_percentile_thresholds': compileTeamPercentileThresholds(teamRows),
-        'team_columns_sorted': getTeamColumnsSorted(teamRows),
+        all_match_data: all_match_data ?? [],
+        all_pit_data: all_pit_data ?? [],
+        all_pick_list_data: all_pick_list_data ?? [],
+        team_rows: teamRows,
+        fetched_team_data: fetched_team_data,
+        team_rows_with_fetched: team_rows_with_fetched,
+        pit_scout_data: all_pit_data ?? [],
+        team_columns_sorted: getTeamColumnsSorted(teamRows),
+        team_percentile_thresholds: compileTeamPercentileThresholds(team_rows_with_fetched),
     } as LIVE_DATA_COMBINED;
 }
 
@@ -168,7 +219,7 @@ function compileTeamPercentileThresholds(teamRows: Record<number, any>): Record<
     });
 }
 
-function getTeamColumnsSorted(teamRows: Record<number, any>):Record<string, TeamColumnSorted>[] {
+function getTeamColumnsSorted(teamRows: Record<number, any>): Record<string, TeamColumnSorted>[] {
     const allTeams = Object.values(teamRows);
     if (allTeams.length === 0) return [];
 

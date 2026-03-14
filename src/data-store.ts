@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { LIVE_DATA_COMBINED, StatisticPercentile } from '../types';
+import { supabase } from '../supabase';
 
 export const TBA_KEY = "sBluV8DKQA0hTvJ2ABC9U3VDZunUGUSehxuDPvtNC8SQ3Q5XHvQVt0nm3X7cvP7j";
 
@@ -9,10 +10,12 @@ interface RawDataState {
     eventKey: string,
     eventData: EventData | null,
     districtEventKeys: string[],
+    teamImages: Record<number, string[]>[],
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => void,
     setDistrictEventKeys: (s: string[]) => void,
     setEventKey: (k: string) => void,
     setEventData: (k: EventData | null) => void,
+    loadTeamImages: () => void,
 }
 
 // Create store using the curried form of `create`
@@ -21,12 +24,15 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
         all_match_data: [],
         all_pit_data: [],
         all_pick_list_data: [],
+        pit_scout_data: [],
         team_rows: [],
         fetched_team_data: [],
         team_percentile_thresholds: [],
         team_columns_sorted: [],
+        team_rows_with_fetched: [],
     },
     eventData: null,
+    teamImages: [],
     districtEventKeys: [],
     eventKey: localStorage.getItem('event-key') ?? '2026wiply',
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => set((s) => ({ rawDataCombined: state })),
@@ -41,56 +47,101 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     setEventData: (a: EventData | null) => {
         set({ 'eventData': a });
     },
+    loadTeamImages: async () => {
+  // Use a Record for better TypeScript type safety
+  const images: Record<number, string[]> = {};
+  const teams = Object.keys(get().rawDataCombined.team_rows);
+
+  // 1. Map teams to promises
+  const promises = teams.map(async (team) => {
+    try {
+      const teamNum = parseInt(team);
+      const storageURL = supabase.storage
+        .from('robot-images')
+        .getPublicUrl(`${get().eventKey}/team${team}`).data.publicUrl;
+      
+      const ourImageExists = await checkImageExists(storageURL);
+      
+      const tbaImages = await fetch(
+        `https://www.thebluealliance.com/api/v3/team/frc${team}/media/2026`,
+        { headers: { "X-TBA-Auth-Key": TBA_KEY } }
+      );
+      const tbaImageBody = await tbaImages.json();
+
+      let finalTBAImages: string[] = [];
+      if (!Object.keys(tbaImageBody).includes('Error')) {
+        finalTBAImages = tbaImageBody
+          .filter((a: any) => a.type != "avatar")
+          .map((i: any) => i.direct_url);
+      }
+
+      // 2. Assign result to the local object
+      images[teamNum] = ourImageExists 
+        ? [storageURL, ...finalTBAImages] 
+        : finalTBAImages;
+      
+    } catch (error) {
+      console.error(`Error loading images for team ${team}:`, error);
+    }
+  });
+
+  // 3. Wait for all promises to resolve
+  await Promise.all(promises);
+
+  // 4. Update state only after everything is finished
+  set({ 'teamImages': images });
+  console.log('Setting images completed');
+},
 }));
 
 interface OPRData {
     'ccwms': Record<string, number>[],
     'dprs': Record<string, number>[],
-    'oprs': Record<string, number>,
+    'oprs': Record<string, number>[],
 }
 
 export interface MatchesData {
-  matches: {
-    actual_time: number;
+    matches: {
+        actual_time: number;
 
-    alliances: {
-      blue: {
-        dq_team_keys: string[];
-        score: number;
-        surrogate_team_keys: string[];
-        team_keys: string[];
-      };
-      red: {
-        dq_team_keys: string[];
-        score: number;
-        surrogate_team_keys: string[];
-        team_keys: string[];
-      };
-    };
+        alliances: {
+            blue: {
+                dq_team_keys: string[];
+                score: number;
+                surrogate_team_keys: string[];
+                team_keys: string[];
+            };
+            red: {
+                dq_team_keys: string[];
+                score: number;
+                surrogate_team_keys: string[];
+                team_keys: string[];
+            };
+        };
 
-    comp_level: string;
-    event_key: string;
-    key: string;
-    match_number: number;
+        comp_level: string;
+        event_key: string;
+        key: string;
+        match_number: number;
 
-    post_result_time: number;
-    predicted_time: number;
-    time: number;
+        post_result_time: number;
+        predicted_time: number;
+        time: number;
 
-    set_number: number;
+        set_number: number;
 
-    score_breakdown: {
-      blue: Record<string, any>;
-      red: Record<string, any>;
-    };
+        score_breakdown: {
+            blue: Record<string, any>;
+            red: Record<string, any>;
+        };
 
-    videos: {
-      key: string;
-      type: string;
+        videos: {
+            key: string;
+            type: string;
+        }[];
+
+        winning_alliance: "red" | "blue" | "";
     }[];
-
-    winning_alliance: "red" | "blue" | "";
-  }[];
 }
 
 interface RankingsData {
@@ -99,7 +150,7 @@ interface RankingsData {
         'dq': number,
         'extra_stats': number[],
         'matches_played': number,
-        'rank': number, 
+        'rank': number,
         'record': {
             'lossed': number,
             'ties': number,
@@ -118,7 +169,7 @@ export interface EventData {
 
 export async function fetchEventData(eventKey: string): Promise<EventData | null> {
     if (!eventKey) return null;
-    eventKey = '2026week0'
+    eventKey = '2026wiply'
     try {
         const [rankingsRes, oprsRes, matchesRes] = await Promise.all([
             fetch(
@@ -153,5 +204,14 @@ export async function fetchEventData(eventKey: string): Promise<EventData | null
     } catch (err) {
         console.error("TBA fetch error", err);
         return null;
+    }
+}
+
+async function checkImageExists(url: string): Promise<boolean> {
+    try {
+        const res = await fetch(url, { method: 'HEAD' });
+        return res.ok; // true if 200–299
+    } catch {
+        return false;
     }
 }
