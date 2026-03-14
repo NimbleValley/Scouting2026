@@ -123,6 +123,8 @@ const Team = () => {
     const [teamImages, setTeamImages] = useState<string[]>([]);
     const [imageIndex, setImageIndex] = useState(0);
 
+    const [showImageModal, setShowImageModal] = useState(false);
+
     useEffect(() => {
         const key = Number(team);
         if (rawData.teamImages && rawData.teamImages[key]) {
@@ -141,6 +143,31 @@ const Team = () => {
     }
 
     return <div className="flex-1 py-5 flex flex-col items-center bg-white gap-8 px-5 text-center rounded-b-lg">
+
+        {/* Image Modal */}
+
+        {showImageModal &&
+            <div onClick={() => setShowImageModal(false)} className="bg-black/85 top-0 left-0 z-1000 pt-20 pb-6 w-full h-[100vh] flex fixed items-center justify-center select-none">
+                <div onClick={() => setShowImageModal(false)} className="flex flex-col flex-1 z-10 p-10">
+                    {
+                        teamImages.length > 0 &&
+                        <div onClick={(e) => e.stopPropagation()} className="flex flex-row gap-2 h-[80%] items-center justify-between w-full px-10">
+                            {teamImages.length > 1 &&
+                                <ArrowLeft color="white" onClick={() => setImageIndex((prev) => prev - 1 >= 0 ? prev - 1 : teamImages.length - 1)} size={64} className="hover:scale-107 cursor-pointer" />
+                            }
+                            <div className="flex flex-col flex-1">
+                            <img className="h-[75vh] rounded-xl object-contain" src={teamImages[imageIndex]}></img>
+                            <button onClick={() => setShowImageModal(false)} className="text-3xl font-rubik text-white px-5 py-2 cursor-pointer hover:scale-105">Close</button>
+                            </div>
+                            {teamImages.length > 1 &&
+                                <ArrowRight color="white" onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev + 1)} size={64} className="hover:scale-107 cursor-pointer" />
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <div className="p-5 w-full flex flex-col md:flex-row items-center justify-start gap-4">
             <div className=" w-full flex flex-col md:flex-row items-center justify-start gap-4">
                 <Link to={'/teams'} className="rotate-[180deg] mr-5 hover:ring-2 p-2 rounded-md cursor-pointer transition hover:scale-103">
@@ -172,7 +199,7 @@ const Team = () => {
                         {teamImages.length > 1 &&
                             <ArrowLeft onClick={() => setImageIndex((prev) => prev - 1 >= 0 ? prev - 1 : teamImages.length - 1)} size={28} className="hover:scale-107 cursor-pointer" />
                         }
-                        <img className="max-h-40 rounded-xl object-contain" src={teamImages[imageIndex]}></img>
+                        <img onClick={() => setShowImageModal(true)} className="max-h-40 cursor-pointer rounded-xl object-contain" src={teamImages[imageIndex]}></img>
                         {teamImages.length > 1 &&
                             <ArrowRight onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev + 1)} size={28} className="hover:scale-107 cursor-pointer" />
                         }
@@ -199,7 +226,7 @@ const Team = () => {
 
             <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
                 <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Auto</h1>
-                <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
+                <div className="max-h-55 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.auto_issues && t.match_type == 'match').map((r, i) => {
                             return <div key={i} className="flex flex-col items-start gap-1 m-2">
@@ -213,7 +240,7 @@ const Team = () => {
 
             <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
                 <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Strategy</h1>
-                <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
+                <div className="max-h-55 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.strategies.length > 5 && t.match_type == 'match').map((r, i) => {
                             return <div key={i} className="flex flex-col items-start gap-1 m-2">
@@ -227,7 +254,7 @@ const Team = () => {
 
             <div className="flex flex-col items-start justify-space-between px-5 gap-3">
                 <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Comments</h1>
-                <div className="max-h-40 overflow-y-auto w-full flex flex-col rounded-md gap-2">
+                <div className="max-h-55 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
                         rawData.rawDataCombined.all_match_data.filter((t) => t.team_number == team && t.match_type == 'match').map((r, i) => {
                             return <div key={i} className="flex flex-col items-start gap-1 m-2">
