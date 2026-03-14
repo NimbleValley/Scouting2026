@@ -95,10 +95,10 @@ function Pick() {
     width: 250
   });
 
-  var state = {
+  const [state, setState] = useState({
     items: getItems(10),
     selected: getItems(5, 10)
-  };
+  });
 
   /**
    * A semi-generic way to handle multiple lists. Matches
@@ -110,7 +110,7 @@ function Pick() {
     droppable2: 'selected'
   };
 
-  const getList = id => this.state[this.id2List[id]];
+  const getList = id => state[id2List[id]];
 
   const onDragEnd = result => {
     const { source, destination } = result;
@@ -122,27 +122,29 @@ function Pick() {
 
     if (source.droppableId === destination.droppableId) {
       const items = reorder(
-        this.getList(source.droppableId),
+        getList(source.droppableId),
         source.index,
         destination.index
       );
 
-      let state = { items };
+      console.log(items)
+
+      let newState = { items };
 
       if (source.droppableId === 'droppable2') {
-        state = { selected: items };
+        newState = { items: items };
       }
 
-      this.setState(state);
+      //setState(state);
     } else {
       const result = move(
-        this.getList(source.droppableId),
-        this.getList(destination.droppableId),
+        getList(source.droppableId),
+        getList(destination.droppableId),
         source,
         destination
       );
 
-      this.setState({
+      setState({
         items: result.droppable,
         selected: result.droppable2
       });
