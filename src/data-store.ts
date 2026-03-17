@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { LIVE_DATA_COMBINED, StatisticPercentile } from '../types';
 import { supabase } from '../supabase';
+import type { PickList } from './pick/Pick';
 
 export const TBA_KEY = "sBluV8DKQA0hTvJ2ABC9U3VDZunUGUSehxuDPvtNC8SQ3Q5XHvQVt0nm3X7cvP7j";
 
@@ -15,7 +16,15 @@ interface RawDataState {
     setDistrictEventKeys: (s: string[]) => void,
     setEventKey: (k: string) => void,
     setEventData: (k: EventData | null) => void,
+    setPickListStore: (p: PickList[]) => void,
     loadTeamImages: () => void,
+    pickListStates: PickList[],
+}
+
+const defaultPickList: PickList = {
+    isLive: false,
+    name: 'Private List',
+    order: [],
 }
 
 // Create store using the curried form of `create`
@@ -34,6 +43,7 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     eventData: null,
     teamImages: [],
     districtEventKeys: [],
+    pickListStates: JSON.parse(localStorage.getItem('local-pick-list-store') ?? JSON.stringify([defaultPickList])),
     eventKey: localStorage.getItem('event-key') ?? '2026wiply',
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => set((s) => ({ rawDataCombined: state })),
     setDistrictEventKeys: (state: string[]) => {
@@ -46,6 +56,10 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     },
     setEventData: (a: EventData | null) => {
         set({ 'eventData': a });
+    },
+    setPickListStore: (p: PickList[]) => {
+        set({'pickListStates': p});
+        localStorage.setItem('local-pick-list-store', JSON.stringify(p));
     },
     loadTeamImages: async () => {
   // Use a Record for better TypeScript type safety

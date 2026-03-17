@@ -1,4 +1,4 @@
-import type { Database } from './database.types'
+import type { Database } from './database.types';
 
 export interface TeamValues {
         auto_fuel_taken_NZ: TeamStatistic;
@@ -91,9 +91,9 @@ export interface LIVE_DATA_COMBINED {
 }
 
 export interface TeamColumnSorted {
-    'min': number[],
-    'max': number[],
-    'median': number[],
-    'mean': number[],
-    'q3': number[],
+        'min': number[],
+        'max': number[],
+        'median': number[],
+        'mean': number[],
+        'q3': number[],
 }
