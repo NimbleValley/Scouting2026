@@ -76,18 +76,22 @@ function Pick() {
     userSelect: 'none',
     padding: 5,
     margin: `0 0 ${8}px 0`,
+    borderRadius: '5px',
 
     // change background colour if dragging
-    background: isDragging ? 'lightgreen' : 'grey',
+    background: isDragging ? '#F37621' : '#ebe8d88a',
+    cursor: 'drag',
 
     // styles we need to apply on draggables
     ...draggableStyle
   });
 
   const getListStyle = (isDraggingOver: boolean) => ({
-    background: isDraggingOver ? 'lightblue' : 'lightgrey',
+    background: isDraggingOver ? '#36343283' : '#36343252',
     padding: 8,
-    width: 250
+    width: 250,
+    borderRadius: '7px',
+    border: '3px solid #3634328b'
   });
 
   const onDragEnd = (result: DragUpdate) => {
@@ -143,10 +147,11 @@ function Pick() {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className='grid grid-cols-2 w-full'>
           <div className='pt-5 bg-orange-200 w-full min-h-10 rounded-b-lg flex flex-col items-center'>
-            <h2>List Order</h2>
+            <h2 className='font-poppins text-2xl'>List Order</h2>
             <Droppable droppableId="order">
               {(provided, snapshot) => (
                 <div
+                  className='font-rubik'
                   ref={provided.innerRef}
                   style={getListStyle(snapshot.isDraggingOver)}>
                   {activePickListData?.order.map((item, i) => (
@@ -174,35 +179,47 @@ function Pick() {
               )}
             </Droppable>
           </div>
-          <div className='pt-5 w-full flex flex-col items-center'>
-            <h2>Available Teams</h2>
-            <Droppable droppableId="available">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  style={getListStyle(snapshot.isDraggingOver)}>
-                  {Object.keys(rawData.rawDataCombined.team_rows)
-                    .filter((t) => !activePickListData?.order.includes(Number(t))) // Convert 't' to Number
-                    .map((item, i) => (
-                      <Draggable key={String(item)} draggableId={String(item)} index={i}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={getItemStyle(
-                              snapshot.isDragging,
-                              provided.draggableProps.style
-                            )}>
-                            {item}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
+          <div className='grid grid-cols-2'>
+
+
+            <div className='pt-5 w-full flex flex-col items-center '>
+              <h2 className='font-poppins text-2xl'>Available Teams</h2>
+              <Droppable droppableId="available">
+                {(provided, snapshot) => (
+                  <div
+                    className='font-rubik'
+                    ref={provided.innerRef}
+                    style={getListStyle(snapshot.isDraggingOver)}>
+                    {Object.keys(rawData.rawDataCombined.team_rows)
+                      .filter((t) => !activePickListData?.order.includes(Number(t))) // Convert 't' to Number
+                      .map((item, i) => (
+                        <Draggable key={String(item)} draggableId={String(item)} index={i}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              style={getItemStyle(
+                                snapshot.isDragging,
+                                provided.draggableProps.style
+                              )}>
+                              {item}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </div>
+
+
+            <div className='pt-5 w-full flex flex-col items-center '>
+              <h2 className='font-poppins text-2xl'>List Operations</h2>
+            </div>
+
+
           </div>
         </div>
       </DragDropContext>
