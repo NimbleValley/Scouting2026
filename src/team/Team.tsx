@@ -222,9 +222,9 @@ const Team = () => {
             </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 w-full md:mt-2 bg-orange-100 py-4 rounded-lg">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-4 w-full md:mt-2 bg-orange-100 py-4 rounded-lg">
 
-            <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
+            <div className="flex flex-col items-start justify-space-between md:border-r-1 border-b-1 md:border-b-0 px-5 gap-3">
                 <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Auto</h1>
                 <div className="max-h-55 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {
@@ -238,7 +238,7 @@ const Team = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col items-start justify-space-between border-r-1 px-5 gap-3">
+            <div className="flex flex-col items-start justify-space-between md:border-r-1 border-b-1 md:border-b-0 px-5 gap-3">
                 <h1 className='font-poppins md:text-3xl lg:text-5xl font-light ml-2'>Strategy</h1>
                 <div className="max-h-55 overflow-y-auto w-full flex flex-col rounded-md gap-2">
                     {

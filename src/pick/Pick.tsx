@@ -3,6 +3,9 @@ import { supabase } from '../../supabase';
 import { DragDropContext, Droppable, Draggable, type DragUpdate, type DraggableStyle } from '@hello-pangea/dnd';
 import { useRawDataStore } from '../data-store';
 import { Menu, Plus, Trash } from 'lucide-react';
+import TeamPreviewModal from '../components/TeamPreviewModal';
+import type { TeamValues, TeamValuesWithFetched } from '../../types';
+import { TEAM_DATA_ORDER } from '../table/Table';
 
 export interface PickList {
   order: number[],
@@ -35,7 +38,11 @@ function Pick() {
   const [activePickListData, setActivePickListData] = useState<PickList | null>(null);
 
   const [pickLists, setPickLists] = useState<PickList[]>([]);
-  const [pickListMenu, setPickListMenu] = useState<PickListMenu>({ list: null, visible: false })
+  const [pickListMenu, setPickListMenu] = useState<PickListMenu>({ list: null, visible: false });
+
+  const [teamPreviewOpen, setTeamPreviewOpen] = useState(true);
+
+  const [viewingStat, setViewingStat] = useState<keyof TeamValuesWithFetched>('tele_points');
 
   useEffect(() => {
     console.log(rawData.pickListStates)
@@ -59,6 +66,34 @@ function Pick() {
   useEffect(() => {
     setActivePickListData(rawData.pickListStates.find((i) => i.name == activePickListName) ?? null);
   }, [activePickListName]);
+
+  const downloadCurrentList = () => {
+    let text = '';
+    activePickListData?.order.forEach((t) => {
+      text = text.concat(t + ',\n');
+    });
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    document.body.appendChild(a); // Required for Firefox to work
+
+    a.href = URL.createObjectURL(blob);
+
+    a.download = "List-" + activePickListData?.name;
+
+    a.click();
+
+    window.URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+  }
+
+  const copyCurrentList = () => {
+    navigator.clipboard.writeText(activePickListData?.order.join('\n') ?? '').then(() => {
+      console.log('Copied.');
+    }).catch(err => {
+      console.error('Could not copy text: ', err);
+    });
+  }
 
 
 
@@ -195,7 +230,7 @@ function Pick() {
                       .map((item, i) => (
                         <Draggable key={String(item)} draggableId={String(item)} index={i}>
                           {(provided, snapshot) => (
-                            <div
+                            <div className='flex flex-row justify-center gap-5'
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
@@ -203,7 +238,11 @@ function Pick() {
                                 snapshot.isDragging,
                                 provided.draggableProps.style
                               )}>
-                              {item}
+                              <h1>
+                                {item}
+                              </h1>
+                              -
+                              <h1 className='text-gray-700'>{ Math.round(rawData?.rawDataCombined?.team_rows_with_fetched[parseInt(item)][viewingStat]?.q3*10)/10 ?? '--'  }</h1>
                             </div>
                           )}
                         </Draggable>
@@ -215,8 +254,11 @@ function Pick() {
             </div>
 
 
-            <div className='pt-5 w-full flex flex-col items-center '>
-              <h2 className='font-poppins text-2xl'>List Operations</h2>
+            <div className='pt-5 w-full flex flex-col gap-4 items-center '>
+              <h2 className='font-poppins text-2xl mb-5'>List Operations</h2>
+              <button className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Auto Generate</button>
+              <button onClick={copyCurrentList} className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Copy</button>
+              <button onClick={downloadCurrentList} className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Download</button>
             </div>
 
 
@@ -284,14 +326,19 @@ function Pick() {
         : <h1 className='my-5 text-2xl'>No pick lists found, make a new one by clicking plus!</h1>
       }
       {(pickListMenu && pickListMenu.list && pickListMenu.visible) && <div className='fixed w-screen h-screen left-0 top-0 z-1000 bg-black/50 flex flex-col items-center justify-center'>
-        <div className='bg-white items-center justify-center py-5 px-8 rounded-md gap-3 flex flex-col'>
+        <div className='bg-white items-center justify-center py-5 px-8 rounded-md gap-5 flex flex-col'>
           <h1 className='text-2xl underline'>'{pickListMenu.list?.name}' Options</h1>
-          <button>Download List</button>
-          <button>Copy List</button>
-          <button onClick={() => { if (pickListMenu.list) deleteList(pickListMenu.list) }}>Delete List</button>
-          <button className='mt-5' onClick={() => setPickListMenu((prev) => { return { ...prev, visible: false } })}>Close</button>
+          {/*
+          <button onClick={downloadCurrentList} className="bg-[#ebe8d8]/67 text-lg px-3 w-fit shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-center gap-3 cursor-pointer hover:ring-[2px] hover:shadow-md transition">Download List</button>
+          <button className="bg-[#ebe8d8]/67 text-lg px-3 w-fit shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-center gap-3 cursor-pointer hover:ring-[2px] hover:shadow-md transition" onClick={copyCurrentList}>Copy List</button>
+          */}
+          <button className=" text-lg px-3 w-fit  rounded-lg border-gray-600 flex flex-row items-center justify-center gap-3 cursor-pointer hover:ring-[2px] hover:shadow-md transition" onClick={() => { if (pickListMenu.list) deleteList(pickListMenu.list) }}>Delete List</button>
+          <button className="bg-[#ebe8d8]/67 text-lg px-3 w-fit shadow-sm rounded-lg border-1 border-gray-600 flex flex-row items-center justify-center gap-3 cursor-pointer hover:ring-[2px] hover:shadow-md transition" onClick={() => setPickListMenu((prev) => { return { ...prev, visible: false } })}>Close</button>
         </div>
       </div>}
+
+      {/*        <TeamPreviewModal isOpen={teamPreviewOpen} onClose={() => setTeamPreviewOpen(false)} forms={[]} teamNumber={0} teamInfo={undefined} />*/}
+
     </div>
   )
 }
