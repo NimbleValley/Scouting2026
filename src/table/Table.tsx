@@ -53,6 +53,7 @@ export const RAW_DATA_ORDER: RawDataOrder[] = [
 export const TEAM_DATA_ORDER: TeamDataOrder[] = [
   { key: 'team_number', label: 'Team Number' },
 
+  { key: 'rank', label: 'Rank' },
   { key: 'opr', label: 'OPR' },
   { key: 'epa', label: 'EPA' },
 

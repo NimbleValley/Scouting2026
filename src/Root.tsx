@@ -80,7 +80,8 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
             ...teamRows[teamNum],
             epa: stat(fetched?.epa ?? -1),
             opr: stat(oprVal),
-            auto_fuel: stat(-1),
+            auto_fuel: stat(fetched?.auto_fuel ?? -1),
+            rank: eventDataRes?.rankings.rankings.find((t) => t.team_key == 'frc' + teamNum)?.rank,
         };
     });
 

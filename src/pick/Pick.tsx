@@ -1,8 +1,8 @@
-import React, { useState, Component, useEffect } from 'react'
+import React, { useState, Component, useEffect, type CSSProperties } from 'react'
 import { supabase } from '../../supabase';
 import { DragDropContext, Droppable, Draggable, type DragUpdate, type DraggableStyle } from '@hello-pangea/dnd';
 import { useRawDataStore } from '../data-store';
-import { Menu, Plus, Trash } from 'lucide-react';
+import { Info, Menu, Plus, Trash } from 'lucide-react';
 import TeamPreviewModal from '../components/TeamPreviewModal';
 import type { TeamValues, TeamValuesWithFetched } from '../../types';
 import { TEAM_DATA_ORDER } from '../table/Table';
@@ -40,7 +40,7 @@ function Pick() {
   const [pickLists, setPickLists] = useState<PickList[]>([]);
   const [pickListMenu, setPickListMenu] = useState<PickListMenu>({ list: null, visible: false });
 
-  const [teamPreviewOpen, setTeamPreviewOpen] = useState(true);
+  const [teamPreviewOpen, setTeamPreviewOpen] = useState<{visible: boolean, team: number}>({visible: false, team: 3197});
 
   const [viewingStat, setViewingStat] = useState<keyof TeamValuesWithFetched>('tele_points');
 
@@ -106,7 +106,7 @@ function Pick() {
     return result;
   };
 
-  const getItemStyle = (isDragging: boolean, draggableStyle: DraggableStyle | undefined) => ({
+  const getItemStyle = (isDragging: boolean, draggableStyle: DraggableStyle | undefined): CSSProperties => ({
     // some basic styles to make the items look a bit nicer
     userSelect: 'none',
     padding: 5,
@@ -114,7 +114,7 @@ function Pick() {
     borderRadius: '5px',
 
     // change background colour if dragging
-    background: isDragging ? '#F37621' : '#ebe8d88a',
+    background: isDragging ? '#F37621' : '#ebe8d8ce',
     cursor: 'drag',
 
     // styles we need to apply on draggables
@@ -225,28 +225,31 @@ function Pick() {
                     className='font-rubik'
                     ref={provided.innerRef}
                     style={getListStyle(snapshot.isDraggingOver)}>
-                    {Object.keys(rawData.rawDataCombined.team_rows)
-                      .filter((t) => !activePickListData?.order.includes(Number(t))) // Convert 't' to Number
-                      .map((item, i) => (
-                        <Draggable key={String(item)} draggableId={String(item)} index={i}>
-                          {(provided, snapshot) => (
-                            <div className='flex flex-row justify-center gap-5'
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              style={getItemStyle(
-                                snapshot.isDragging,
-                                provided.draggableProps.style
-                              )}>
-                              <h1>
-                                {item}
-                              </h1>
-                              -
-                              <h1 className='text-gray-700'>{ Math.round(rawData?.rawDataCombined?.team_rows_with_fetched[parseInt(item)][viewingStat]?.q3*10)/10 ?? '--'  }</h1>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                    {
+
+                      Object.values(rawData.rawDataCombined.team_rows_with_fetched).sort((a, b) => viewingStat == 'rank' ? (a.rank - b.rank) : typeof b[viewingStat] == 'number' ? (b[viewingStat] - a[viewingStat]) : (b[viewingStat]?.q3 ?? -1) - (a[viewingStat]?.q3 ?? -1)).map((t) => t.team_number)
+                        .filter((t) => !activePickListData?.order.includes(Number(t))) // Convert 't' to Number
+                        .map((item, i) => (
+                          <Draggable key={String(item)} draggableId={String(item)} index={i}>
+                            {(provided, snapshot) => (
+                              <div className='flex flex-row justify-center gap-5'
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={getItemStyle(
+                                  snapshot.isDragging,
+                                  provided.draggableProps.style
+                                )}>
+                                <h1>
+                                  {item}
+                                </h1>
+                                -
+                                <h1 className='text-gray-700'>{Math.round(typeof rawData?.rawDataCombined?.team_rows_with_fetched[parseInt(item)][viewingStat] == 'number' ? rawData?.rawDataCombined?.team_rows_with_fetched[parseInt(item)][viewingStat] * 10 : rawData?.rawDataCombined?.team_rows_with_fetched[parseInt(item)][viewingStat]?.q3 * 10) / 10 ?? '--'}</h1>
+                                <Info onClick={() => setTeamPreviewOpen({visible: true, team: item})} className='hover:scale-105 cursor-pointer' />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
                     {provided.placeholder}
                   </div>
                 )}
@@ -256,7 +259,15 @@ function Pick() {
 
             <div className='pt-5 w-full flex flex-col gap-4 items-center '>
               <h2 className='font-poppins text-2xl mb-5'>List Operations</h2>
+              <div className='flex flex-row items-center gap-2'>
+                <label className='font-poppins text-lg ' htmlFor='stat-cat'>Viewing:</label>
+                <select value={viewingStat} onChange={(e) => setViewingStat(e.target.value as keyof TeamValuesWithFetched)} id='stat-cat' className='max-w-50 text-lg font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>
+                  {TEAM_DATA_ORDER.map((t) => <option value={t.key}>{t.label}</option>)}
+                </select>
+              </div>
+              {/*
               <button className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Auto Generate</button>
+              */}
               <button onClick={copyCurrentList} className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Copy</button>
               <button onClick={downloadCurrentList} className='text-xl font-rubik cursor-pointer border-[2px] px-5 py-1 focus:ring-2 ring-orange-500/67 border-[#3634328b] bg-[#36343211] hover:bg-[#36343252] rounded-md'>Download</button>
             </div>
@@ -337,7 +348,15 @@ function Pick() {
         </div>
       </div>}
 
-      {/*        <TeamPreviewModal isOpen={teamPreviewOpen} onClose={() => setTeamPreviewOpen(false)} forms={[]} teamNumber={0} teamInfo={undefined} />*/}
+      {      <TeamPreviewModal 
+                isOpen={teamPreviewOpen.visible} 
+                onClose={() => setTeamPreviewOpen({ ...teamPreviewOpen, visible: false })} 
+                teamNumber={teamPreviewOpen.team}
+                // Pass the real data from the store
+                forms={rawData.rawDataCombined.all_match_data} 
+                fetchedData={rawData.rawDataCombined.fetched_team_data}
+            />
+            }
 
     </div>
   )

@@ -35,6 +35,7 @@ export interface TeamValuesWithFetched {
         opr: TeamStatistic;
         epa: TeamStatistic;
         auto_fuel: TeamStatistic;
+        rank: number;
 }
 
 export interface TeamStatistic {

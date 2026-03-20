@@ -73,6 +73,7 @@ const UpdateFetched = () => {
                 'team_name': tbaData?.teamData?.[parseInt(team)] ?? 'Unknown',
                 'epa': statboticsData?.epa?.breakdown?.['total_points'] ?? -1,
                 'ai_overview': aiParsed[team] ?? null,
+                'auto_fuel': statboticsData?.epa?.breakdown?.['auto_fuel'] ?? -1,
             });
         }
 

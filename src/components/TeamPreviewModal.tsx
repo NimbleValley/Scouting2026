@@ -1,43 +1,50 @@
 import { useEffect, useState } from "react";
 import { X, Search } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useRawDataStore, type EventData } from "../data-store";
+import { Link } from "react-router-dom";
+import { useRawDataStore } from "../data-store";
 import type { Database } from "../../database.types";
-import type { TeamValuesWithFetched } from "../../types";
 
 export default function TeamPreviewModal({
   isOpen,
   onClose,
-  forms,
+  forms, // Will fallback to store if empty
   teamNumber,
   fetchedData,
-  eventData,
-  teamRows,
-  teamImages
-}: { isOpen: boolean, onClose: VoidFunction, forms: Database['public']['Tables']['Live Data']['Row'][], teamNumber: number, fetchedData: Database['public']['Tables']['Fetched Team Data']['Row'][], eventData:EventData, teamRows:  Record<number, TeamValuesWithFetched>[]}) {
-
+}: {
+  isOpen: boolean,
+  onClose: VoidFunction,
+  forms: Database['public']['Tables']['Live Data']['Row'][],
+  teamNumber: number,
+  fetchedData: Database['public']['Tables']['Fetched Team Data']['Row'][]
+}) {
   const rawData = useRawDataStore();
 
-  const navigate = useNavigate();
+  // --- Logic to make it work with your store ---
+  const teamStats = rawData.rawDataCombined.team_rows;
+  const eventData = rawData.eventData;
+  const tbaData = rawData.eventData?.opr;
 
-  var teamStats = null;
-  var tbaData = null;
+  // If the parent passes an empty array, use all match data from the store
+  const datasource = forms && forms.length > 0 ? forms : rawData.rawDataCombined.all_match_data;
 
   const teamForms = teamNumber
-    ? forms
+    ? datasource
       .filter(f => Number(f.team_number) === teamNumber)
       .sort((a, b) => (a.match_number ?? 0) - (b.match_number ?? 0))
     : [];
 
   const teamComments = teamForms.filter(f => f.comments);
-  //const imageUrl = selectedTeam ? teamImages[selectedTeam] : null;
-
-  if (!isOpen) return null;
 
   const [fetchedTeam, setFetchedTeam] = useState<null | Database['public']['Tables']['Fetched Team Data']['Row']>(null);
+
   useEffect(() => {
-    setFetchedTeam(fetchedData.find((f) => f.team == teamNumber) ?? null);
-  }, [teamNumber]);
+    if (teamNumber) {
+      setFetchedTeam(fetchedData?.find((f) => f.team == teamNumber) ||
+        rawData.rawDataCombined.fetched_team_data.find((f) => f.team == teamNumber) || null);
+    }
+  }, [teamNumber, fetchedData, rawData.rawDataCombined.fetched_team_data]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-706 flex items-center justify-center bg-black/67" onClick={onClose}>
@@ -59,21 +66,18 @@ export default function TeamPreviewModal({
             <div className="space-y-6">
               {/* Team Header */}
               <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
-                {/* imageUrl && (
-                  <img
-                    src={imageUrl}
-                    alt={`Team ${selectedTeam}`}
-                    className="w-24 h-24 object-contain rounded-lg border border-gray-200"
-                  />
-                ) */}
                 <div className="w-full">
-
-                  <div className="p-4 flex justify-between w-full gap-4">
-                    <h3 className="text-3xl font-bold text-gray-800">
-                      Team {teamNumber} - {(fetchedTeam && fetchedTeam.team_name) || "Unknown Team"}
-                    </h3>
-                    <Link to={'/team/'+teamNumber}
-                      className="px-5 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium cursor-pointer"
+                  <div className="p-4 flex justify-between flex-row w-full gap-4">
+                    <div className="flex flex-col items-center flex-3">
+                      <h3 className="text-3xl font-bold text-gray-800">
+                        Team {teamNumber} - {(fetchedTeam && fetchedTeam.team_name) || "Unknown Team"}
+                      </h3>
+                      {(teamNumber && rawData.teamImages[teamNumber])  &&
+                      <img className="max-w-[50%] max-h-50 rounded-md" src={rawData.teamImages[teamNumber][0]}></img>
+                      }
+                    </div>
+                    <Link to={'/team/' + teamNumber}
+                      className="px-5 flex-1 py-2 h-fit w-fit flex-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium cursor-pointer"
                     >
                       View Team Page
                     </Link>
@@ -81,53 +85,56 @@ export default function TeamPreviewModal({
 
                   <div className="text-base text-gray-800 mb-1 flex flex-row flex-wrap gap-2">
                     {/* Rank */}
-                    <div className="bg-gray-50 p-3 rounded-lg text-center shadow-md">
+                    <div className="bg-gray-50 p-3 rounded-lg text-center  border-1 border-gray-400">
                       <p className="text-gray-500 text-xs">Rank</p>
-                      <p className="text-md font-semibold">{eventData?.rankings.rankings.find((t) => t.team_key == 'frc' + teamNumber)?.team_key ?? 'N/A'}</p>
+                      <p className="text-md font-semibold">
+                        {eventData?.rankings?.rankings?.find((t) => t.team_key == 'frc' + teamNumber)?.rank ?? 'N/A'}
+                      </p>
                     </div>
 
                     {/* OPR */}
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
                       <p className="text-gray-500 text-xs">OPR</p>
                       <p className="text-md font-semibold">
-                        {Math.round((Number(tbaData?.oprs[`frc${teamNumber}`] ?? 0)) * 10) / 10}
+                        {Math.round((Number(tbaData?.oprs?.[`frc${teamNumber}`] ?? 0)) * 10) / 10}
                       </p>
                     </div>
 
-                    {/* Q3 Points */}
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
-                      <p className="text-gray-500 text-xs">Total Points</p>
+                    {/* Other stats */}
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
+                      <p className="text-gray-500 text-xs">Auto Rating</p>
                       <p className="text-md font-semibold">
-                        {teamStats[teamNumber]?.total_points?.q3 ?? 0}
+                        {teamStats[teamNumber]?.auto_sos?.q3 ?? 0}
                       </p>
                     </div>
 
-                    {/* Other stats (optional) */}
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
-                      <p className="text-gray-500 text-xs">Auto Points</p>
-                      <p className="text-md font-semibold">
-                        {teamStats[teamNumber]?.auto_points?.q3 ?? 0}
-                      </p>
-                    </div>
-
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
                       <p className="text-gray-500 text-xs">Tele Points</p>
                       <p className="text-md font-semibold">
                         {teamStats[teamNumber]?.tele_points?.q3 ?? 0}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
-                      <p className="text-gray-500 text-xs">Endgame Points</p>
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
+                      <p className="text-gray-500 text-xs">Defense Strength</p>
                       <p className="text-md font-semibold">
-                        {teamStats[teamNumber]?.endgame_points?.q3 ?? 0}
+                        {teamStats[teamNumber]?.defense_strength?.q3 ?? 0}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center shadow-md">
-                      <p className="text-gray-500 text-xs">Total Gamepieces</p>
+                    {/* Q3 Points */}
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
+                      <p className="text-gray-500 text-xs">Throughput Rating</p>
                       <p className="text-md font-semibold">
-                        {teamStats[teamNumber]?.total_gamepieces?.q3 ?? 0}
+                        {teamStats[teamNumber]?.throughput_speed?.q3 ?? 0}
+                      </p>
+                    </div>
+
+                    {/* Q3 Points */}
+                    <div className="bg-gray-50 p-3 flex flex-col justify-center rounded-lg text-center  border-1 border-gray-400">
+                      <p className="text-gray-500 text-xs">Driver Rating</p>
+                      <p className="text-md font-semibold">
+                        {teamStats[teamNumber]?.driver_rating?.q3 ?? 0}
                       </p>
                     </div>
                   </div>
@@ -144,11 +151,11 @@ export default function TeamPreviewModal({
                   {teamComments.map((form) => (
                     <div
                       key={form.id}
-                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover: border-1 border-gray-400 transition"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-orange-600">
-                          {form.match_type == 'match' ? "Match " + (form.match_number) : capitalizeFirstLetter(form.match_type) + ' Match'}
+                          {form.match_type == 'match' ? "Match " + (form.match_number) : capitalizeFirstLetter(form.match_type ?? '') + ' Match'}
                         </span>
                         {form.scout_name && (
                           <span className="text-xs text-gray-500">
@@ -165,23 +172,11 @@ export default function TeamPreviewModal({
               ) : (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-2">
-                    <svg
-                      className="w-16 h-16 mx-auto"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-lg">
-                    No comments available for Team {teamNumber}
-                  </p>
+                  <p className="text-gray-500 text-lg">No comments available for Team {teamNumber}</p>
                 </div>
               )}
             </div>
@@ -190,9 +185,7 @@ export default function TeamPreviewModal({
               <div className="text-gray-400 mb-4">
                 <Search className="w-20 h-20 mx-auto" />
               </div>
-              <p className="text-gray-500 text-lg">
-                Enter a team number to view their comments
-              </p>
+              <p className="text-gray-500 text-lg">Enter a team number to view their comments</p>
             </div>
           )}
         </div>
@@ -212,8 +205,6 @@ export default function TeamPreviewModal({
 }
 
 function capitalizeFirstLetter(str: string) {
-  if (typeof str !== 'string' || str.length === 0) {
-    return str; // Handle non-string or empty input
-  }
+  if (typeof str !== 'string' || str.length === 0) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
