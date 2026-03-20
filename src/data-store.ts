@@ -44,7 +44,7 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     teamImages: [],
     districtEventKeys: [],
     pickListStates: JSON.parse(localStorage.getItem('local-pick-list-store') ?? JSON.stringify([defaultPickList])),
-    eventKey: localStorage.getItem('event-key') ?? '2026wiply',
+    eventKey: '2026wiapp',
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => set((s) => ({ rawDataCombined: state })),
     setDistrictEventKeys: (state: string[]) => {
         set((s) => ({ districtEventKeys: state }));
@@ -183,7 +183,7 @@ export interface EventData {
 
 export async function fetchEventData(eventKey: string): Promise<EventData | null> {
     if (!eventKey) return null;
-    eventKey = '2026wiply'
+    eventKey = '2026wiapp'
     try {
         const [rankingsRes, oprsRes, matchesRes] = await Promise.all([
             fetch(
