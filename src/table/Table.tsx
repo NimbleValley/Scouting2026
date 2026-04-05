@@ -1,7 +1,7 @@
 import type { LIVE_DATA_COMBINED, StatisticPercentile, TeamStatistic, TeamValues, TeamValuesWithFetched } from "../../types";
 import { useEffect, useState } from "react";
 import { useRawDataStore } from "../data-store";
-import { ArrowUpDown, ArrowDown, ArrowUp, Settings, X, HighlighterIcon } from "lucide-react";
+import { ArrowUpDown, ArrowDown, ArrowUp, Settings, X, HighlighterIcon, Check } from "lucide-react";
 import type { Database } from "../../database.types";
 import { Link } from "react-router-dom";
 
@@ -109,6 +109,7 @@ export const Table = () => {
     return <ArrowUp size={14} className="inline ml-1 text-black" />;
   };
 
+  // Sorting helper
   const handleSort = (column: string) => {
     setSortConfig((prev) => {
       if (prev.column === column) {
@@ -168,7 +169,7 @@ export const Table = () => {
       const statA = a[config.column!];
       const statB = b[config.column!];
 
-      // Extract values: if it's an object, get the specific statType; otherwise, use the raw value
+      // If it's an object, get the specific statType, otherwise, use the raw value
       let valA = (statA && typeof statA === 'object') ? statA[valueType] : (statA ?? 0);
       let valB = (statB && typeof statB === 'object') ? statB[valueType] : (statB ?? 0);
 
@@ -275,6 +276,16 @@ export const Table = () => {
           <option value={'Team'} selected>Team</option>
         </select>
 
+        <button onClick={() => rawData.setUsePreData(!rawData.usePreData)} className="ml-10 flex flex-row items-center hover:ring-2 ring-gray-800 transition cursor-pointer p-1 rounded-md">
+          <h2>Use Pre</h2>
+          {rawData.usePreData ? <div className="text-green-900"><Check /></div> : <div className="text-red-900"><X /></div>}
+        </button>
+
+        <button onClick={() => rawData.setUsePracticeData(!rawData.usePracticeData)} className="ml-10 flex flex-row items-center hover:ring-2 ring-gray-800 transition cursor-pointer p-1 rounded-md">
+          <h2>Use Practice</h2>
+          {rawData.usePracticeData ? <div className="text-green-900"><Check /></div> : <div className="text-red-900"><X /></div>}
+        </button>
+
         {tableType == 'Raw' &&
           <><label htmlFor="data-table-number-filter" className="ml-10">Team filter:</label><input onChange={(e) => setTeamFilter(e.target.value)} type={'number'} id="data-table-number-filter" className="ml-4 bg-gray-50 px-3 w-25 py-1 rounded-md border-1 border-gray-500 hover:border-gray-800 transition cursor-pointer active:ring-2">
           </input></>
@@ -289,7 +300,7 @@ export const Table = () => {
               <option value={'mean'}>Mean</option>
               <option value={'min'}>Min</option>
             </select>
-            <button onClick={() => setPercentileHighlight((prev) => !prev)} className="ml-10 hover:ring-2 transition cursor-pointer p-1 rounded-md">
+            <button onClick={() => setPercentileHighlight((prev) => !prev)} className="ml-10 hover:ring-2 ring-gray-800 transition cursor-pointer p-1 rounded-md">
               <HighlighterIcon />
             </button>
           </>

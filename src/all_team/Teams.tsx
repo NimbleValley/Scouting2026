@@ -15,9 +15,9 @@ const Teams = () => {
                     let f = fetched.find((f) => f.team == parseInt(item[0]));
                     console.log(f);
                     return <Link to={'/team/' + item[0]} key={i} 
-                        className={`bg-[#ebe8d8]/67 shadow-sm rounded-lg border-1 border-gray-600 flex flex-col lg:flex-row items-center justify-around px-2 py-1 lg:gap-3 cursor-pointer hover:ring-2 hover:shadow-md hover:scale-101 transition`}>
-                        <h1 className="font-poppins font-light text-3xl select-none">{item[0]}</h1>
-                        <h2 style={{ backgroundColor: `${f?.primary_hex ?? '#ebe8d8'}67`, textShadow: `0px 0px 3px ${f?.secondary_hex ?? '#000000'}85`  }} className='px-2  rounded-lg text-shadow-lg text-shadow-black/5 text-center text-xl font-rubik font-light select-none'>{f?.team_name ?? 'Unknown'}</h2>
+                        className={`bg-[#ebe8d8]/67 shadow-sm rounded-lg border-1 border-gray-600 flex flex-col lg:flex-row items-center justify-around px-2 py-1 lg:gap-3 cursor-pointer hover:ring-2 hover:shadow-md transition`}>
+                        <h1 className="font-poppins font-light text-2xl select-none">{item[0]}</h1>
+                        <h2 style={{ backgroundColor: `${f?.primary_hex ?? '#ebe8d8'}67`, textShadow: `0px 0px 3px ${f?.secondary_hex ?? '#000000'}85`  }} className='px-2  rounded-lg text-shadow-lg text-shadow-black/5 text-center text-xl font-rubik font-light select-none'>{f?.team_name.split(' ').map((s) => s.length > 11 ? s.substring(0, 10) + '... ' : s + ' ') ?? 'Unknown'}</h2>
 
                     </Link>
                 })

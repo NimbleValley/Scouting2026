@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { LIVE_DATA_COMBINED, StatisticPercentile } from '../types';
 import { supabase } from '../supabase';
 import type { PickList } from './pick/Pick';
+import { loader } from './Root';
 
 export const TBA_KEY = "sBluV8DKQA0hTvJ2ABC9U3VDZunUGUSehxuDPvtNC8SQ3Q5XHvQVt0nm3X7cvP7j";
 
@@ -19,6 +20,10 @@ interface RawDataState {
     setPickListStore: (p: PickList[]) => void,
     loadTeamImages: () => void,
     pickListStates: PickList[],
+    usePracticeData: boolean,
+    usePreData: boolean,
+    setUsePracticeData: (b: boolean) => void,
+    setUsePreData: (b: boolean) => void,
 }
 
 const defaultPickList: PickList = {
@@ -26,6 +31,15 @@ const defaultPickList: PickList = {
     name: 'Private List',
     order: [],
 }
+
+const safeJSONParse = (key, defaultValue) => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (e) {
+        return defaultValue;
+    }
+};
 
 // Create store using the curried form of `create`
 export const useRawDataStore = create<RawDataState>()((set, get) => ({
@@ -43,8 +57,10 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
     eventData: null,
     teamImages: [],
     districtEventKeys: [],
+    usePracticeData: safeJSONParse('use-practice-data', false),
+    usePreData: safeJSONParse('use-pre-data', false),
     pickListStates: JSON.parse(localStorage.getItem('local-pick-list-store') ?? JSON.stringify([defaultPickList])),
-    eventKey: '2026wiapp',
+    eventKey: '2026wicmp',
     setRawDataCombined: (state: LIVE_DATA_COMBINED) => set((s) => ({ rawDataCombined: state })),
     setDistrictEventKeys: (state: string[]) => {
         set((s) => ({ districtEventKeys: state }));
@@ -58,54 +74,70 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
         set({ 'eventData': a });
     },
     setPickListStore: (p: PickList[]) => {
-        set({'pickListStates': p});
+        set({ 'pickListStates': p });
         localStorage.setItem('local-pick-list-store', JSON.stringify(p));
     },
     loadTeamImages: async () => {
-  // Use a Record for better TypeScript type safety
-  const images: Record<number, string[]> = {};
-  const teams = Object.keys(get().rawDataCombined.team_rows);
+        // Use a Record for better TypeScript type safety
+        const images: Record<number, string[]> = {};
+        const teams = Object.keys(get().rawDataCombined.team_rows);
 
-  // 1. Map teams to promises
-  const promises = teams.map(async (team) => {
-    try {
-      const teamNum = parseInt(team);
-      const storageURL = supabase.storage
-        .from('robot-images')
-        .getPublicUrl(`${get().eventKey}/team${team}`).data.publicUrl;
-      
-      const ourImageExists = await checkImageExists(storageURL);
-      
-      const tbaImages = await fetch(
-        `https://www.thebluealliance.com/api/v3/team/frc${team}/media/2026`,
-        { headers: { "X-TBA-Auth-Key": TBA_KEY } }
-      );
-      const tbaImageBody = await tbaImages.json();
+        // 1. Map teams to promises
+        const promises = teams.map(async (team) => {
+            try {
+                const teamNum = parseInt(team);
+                const storageURL = supabase.storage
+                    .from('robot-images')
+                    .getPublicUrl(`${get().eventKey}/team${team}`).data.publicUrl;
 
-      let finalTBAImages: string[] = [];
-      if (!Object.keys(tbaImageBody).includes('Error')) {
-        finalTBAImages = tbaImageBody
-          .filter((a: any) => a.type != "avatar")
-          .map((i: any) => i.direct_url);
-      }
+                const ourImageExists = await checkImageExists(storageURL);
 
-      // 2. Assign result to the local object
-      images[teamNum] = ourImageExists 
-        ? [storageURL, ...finalTBAImages] 
-        : finalTBAImages;
-      
-    } catch (error) {
-      console.error(`Error loading images for team ${team}:`, error);
-    }
-  });
+                const tbaImages = await fetch(
+                    `https://www.thebluealliance.com/api/v3/team/frc${team}/media/2026`,
+                    { headers: { "X-TBA-Auth-Key": TBA_KEY } }
+                );
+                const tbaImageBody = await tbaImages.json();
 
-  // 3. Wait for all promises to resolve
-  await Promise.all(promises);
+                let finalTBAImages: string[] = [];
+                if (!Object.keys(tbaImageBody).includes('Error')) {
+                    finalTBAImages = tbaImageBody
+                        .filter((a: any) => a.type != "avatar")
+                        .map((i: any) => i.direct_url);
+                }
 
-  // 4. Update state only after everything is finished
-  set({ 'teamImages': images });
-  console.log('Setting images completed');
-},
+                // 2. Assign result to the local object
+                images[teamNum] = ourImageExists
+                    ? [storageURL, ...finalTBAImages]
+                    : finalTBAImages;
+
+            } catch (error) {
+                console.error(`Error loading images for team ${team}:`, error);
+            }
+        });
+
+        // 3. Wait for all promises to resolve
+        await Promise.all(promises);
+
+        // 4. Update state only after everything is finished
+        set({ 'teamImages': images });
+        console.log('Setting images completed');
+    },
+    setUsePracticeData: async (b: boolean) => {
+        if (b != get().usePracticeData) {
+            set({ 'usePracticeData': b });
+            localStorage.setItem('use-practice-data', JSON.stringify(b));
+            const res = await loader();
+            set({ 'rawDataCombined': res });
+        }
+    },
+    setUsePreData: async (b: boolean) => {
+        if (b != get().usePreData) {
+            set({ 'usePreData': b });
+            localStorage.setItem('use-pre-data', JSON.stringify(b));
+            const res = await loader();
+            set({ 'rawDataCombined': res });
+        }
+    },
 }));
 
 interface OPRData {
@@ -183,7 +215,7 @@ export interface EventData {
 
 export async function fetchEventData(eventKey: string): Promise<EventData | null> {
     if (!eventKey) return null;
-    eventKey = '2026wiapp'
+    eventKey = '2026wicmp'
     try {
         const [rankingsRes, oprsRes, matchesRes] = await Promise.all([
             fetch(

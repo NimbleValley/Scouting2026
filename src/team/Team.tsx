@@ -157,7 +157,7 @@ const Team = () => {
                             }
                             <div className="flex flex-col flex-1">
                             <img className="h-[75vh] rounded-xl object-contain" src={teamImages[imageIndex]}></img>
-                            <button onClick={() => setShowImageModal(false)} className="text-3xl font-rubik text-white px-5 py-2 cursor-pointer hover:scale-105">Close</button>
+                            <button onClick={() => setShowImageModal(false)} className="text-2xl underline font-poppins text-white px-5 py-2 cursor-pointer hover:scale-105">Close</button>
                             </div>
                             {teamImages.length > 1 &&
                                 <ArrowRight color="white" onClick={() => setImageIndex((prev) => prev + 1 >= teamImages.length ? 0 : prev + 1)} size={64} className="hover:scale-107 cursor-pointer" />
