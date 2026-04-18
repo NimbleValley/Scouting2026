@@ -32,7 +32,7 @@ export default function Root() {
 }
 
 export async function loader(): Promise<LIVE_DATA_COMBINED> {
-    const [
+    var [
         { data: all_match_data },
         { data: all_pit_data },
         { data: all_pick_list_data },
@@ -48,7 +48,6 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
 
     console.log(fetched_team_data)
 
-    // 1. Safe OPR Map creation
     const oprMap = new Map<string, number>();
     const oprSource = eventDataRes?.opr?.oprs;
     console.warn(eventDataRes)
@@ -60,6 +59,13 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         });
     }
 
+    if (all_match_data && all_match_data.length > 0) {
+        all_match_data = all_match_data.filter((m) => {
+            return m.match_type == 'match' || 
+                (JSON.parse(localStorage.getItem('use-practice-data') ?? 'false') && m.match_type == 'practice')
+                || (JSON.parse(localStorage.getItem('use-pre-data') ?? 'false') && m.match_type == 'pre')
+        })
+    }
     const fetchedTeamMap = new Map(fetched_team_data?.map(t => [t.team, t]));
     const teamRows = all_match_data ? compileTeamData(all_match_data) : {};
 
@@ -155,13 +161,16 @@ function compileTeamData(matchData: Database['public']['Tables']['Live Data']['R
             if (len === 0) return; // nothing numeric to compute
 
             const getPercentile = (p: number) => {
+                valuesInKey.sort((a, b) => a-b)
                 const index = p * (len - 1);
                 const lower = Math.floor(index);
                 const upper = Math.ceil(index);
                 const weight = index - lower;
                 const lowerVal = valuesInKey[lower];
                 const upperVal = valuesInKey[upper];
-                return lowerVal * (1 - weight) + upperVal * weight;
+                if(team == 3197)
+                console.log(valuesInKey)
+                return upperVal;
             };
 
             const sortedAsc = [...valuesInKey].sort((a, b) => a - b);

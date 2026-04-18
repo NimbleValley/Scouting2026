@@ -82,7 +82,6 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
         const images: Record<number, string[]> = {};
         const teams = Object.keys(get().rawDataCombined.team_rows);
 
-        // 1. Map teams to promises
         const promises = teams.map(async (team) => {
             try {
                 const teamNum = parseInt(team);
@@ -105,7 +104,6 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
                         .map((i: any) => i.direct_url);
                 }
 
-                // 2. Assign result to the local object
                 images[teamNum] = ourImageExists
                     ? [storageURL, ...finalTBAImages]
                     : finalTBAImages;
@@ -115,10 +113,8 @@ export const useRawDataStore = create<RawDataState>()((set, get) => ({
             }
         });
 
-        // 3. Wait for all promises to resolve
         await Promise.all(promises);
 
-        // 4. Update state only after everything is finished
         set({ 'teamImages': images });
         console.log('Setting images completed');
     },
