@@ -43,7 +43,7 @@ export async function loader(): Promise<LIVE_DATA_COMBINED> {
         supabase.from('Pit Scouting').select('*'),
         supabase.from('Pick List').select('*'),
         supabase.from('Fetched Team Data').select('*'),
-        fetchEventData(localStorage.getItem('event-key') ?? '2026wicmp')
+        fetchEventData(localStorage.getItem('event-key') ?? '2026cur')
     ]);
 
     console.log(fetched_team_data)
